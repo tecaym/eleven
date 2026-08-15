@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ELEVEN Brussels</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+
+  :root{
+    --black: #050505;
+    --black-2: #0f0f10;
+    --pink: #ff2d78;
+    --pink-light: #ff85b3;
+    --violet: #7b2ff7;
+    --white: #f6f2f4;
+    --line: rgba(255,45,120,0.28);
+  }
+
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+
+  body{
+    background: var(--black);
+    color: var(--white);
+    font-family: 'Jost', sans-serif;
+    font-weight: 300;
+    overflow-x: hidden;
+  }
+
+  ::selection{ background: var(--pink); color: var(--black); }
+
+  h1,h2,h3, .display{
+    font-family: 'Bebas Neue', sans-serif;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+  }
+
+  .eyebrow{
+    font-size: 0.72rem;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--pink-light);
+    display:flex;
+    align-items:center;
+    gap: 0.9rem;
+  }
+  .eyebrow::before{
+    content:"";
+    width: 28px; height:1px;
+    background: var(--pink);
+    box-shadow: 0 0 8px var(--pink);
+    display:inline-block;
+  }
+
+  a{ color: inherit; text-decoration:none; }
+
+  .grid-bg{
+    position: fixed; inset:0; z-index:0; pointer-events:none;
+    background-image:
+      radial-gradient(circle at 50% 0%, rgba(255,45,120,0.14), transparent 55%),
+      radial-gradient(circle at 85% 60%, rgba(123,47,247,0.10), transparent 50%);
+  }
+
+  .curtain{
+    position: fixed; inset:0; z-index: 1000;
+    background: var(--black);
+    display:flex; align-items:center; justify-content:center;
+    transition: opacity 0.8s ease;
+  }
+  .curtain.open{ opacity:0; pointer-events:none; }
+
+  header{
+    position: fixed; top:0; left:0; right:0;
+    z-index: 200;
+    display:grid; grid-template-columns: 1fr auto 1fr; align-items:center;
+    padding: 1rem clamp(1.5rem, 5vw, 4rem);
+    background: #000000;
+    border-bottom: 1px solid rgba(255,45,120,0.15);
+  }
+  .wordmark{
+    font-family:'Bebas Neue', sans-serif;
+    font-size: 1.6rem;
+    letter-spacing: 0.12em;
+    color: var(--white);
+  }
+  .wordmark span{ color: var(--pink); }
+  .nav-logo{
+    height: 98px;
+    width: auto;
+    display: block;
+    justify-self: center;
+  }
+  .nav-phone{
+    justify-self: start;
+    display:flex; align-items:center; gap:0.5rem;
+    color: var(--white); opacity:0.85;
+    font-size:0.75rem; letter-spacing:0.08em; white-space:nowrap;
+  }
+  .nav-phone:hover{ opacity:1; color: var(--pink-light); }
+  .nav-phone svg{ width:16px; height:16px; flex-shrink:0; }
+  @media (max-width: 680px){ .nav-phone span{ display:none; } }
+  nav{ display:flex; gap: 2.2rem; justify-self:end; }
+  header > .nav-toggle{ justify-self:end; }
+  nav a{
+    font-size: 0.7rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--white);
+    opacity: 0.75;
+    position:relative;
+    padding-bottom: 4px;
+  }
+  nav a::after{
+    content:"";
+    position:absolute; left:0; bottom:0;
+    width:0%; height:1px;
+    background: var(--pink);
+    box-shadow: 0 0 6px var(--pink);
+    transition: width 0.35s ease;
+  }
+  nav a:hover{ opacity:1; }
+  nav a:hover::after{ width:100%; }
+
+  .nav-toggle{
+    display:none;
+    flex-direction:column; gap:5px;
+    background:none; border:none; cursor:pointer; padding:0.5rem;
+    z-index:210;
+  }
+  .nav-toggle span{
+    width:24px; height:2px; background: var(--white);
+    transition: transform 0.3s ease, opacity 0.3s ease;
+  }
+  .nav-toggle.open span:nth-child(1){ transform: translateY(7px) rotate(45deg); }
+  .nav-toggle.open span:nth-child(2){ opacity:0; }
+  .nav-toggle.open span:nth-child(3){ transform: translateY(-7px) rotate(-45deg); }
+
+  @media (max-width: 680px){
+    .nav-toggle{ display:flex; }
+    nav{
+      display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+      gap: 2.2rem;
+      position: fixed; inset:0;
+      padding-top: 7.5rem; padding-bottom: 2rem;
+      overflow-y:auto;
+      background: #000000;
+      transform: translateX(100%);
+      transition: transform 0.35s ease;
+    }
+    nav.open{ transform: translateX(0); }
+    nav a{ font-size:0.9rem; }
+  }
+
+  .hero{
+    min-height: 100vh;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center;
+    position: relative;
+    padding: 2rem;
+    overflow: hidden;
+  }
+  .hero-video{
+    position: absolute; inset:0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    z-index: 0;
+  }
+  .hero-overlay{
+    position: absolute; inset:0;
+    z-index: 1;
+    background:
+      linear-gradient(180deg, rgba(5,5,5,0.55) 0%, rgba(5,5,5,0.35) 40%, rgba(5,5,5,0.75) 100%);
+  }
+  .hero > *:not(.hero-video):not(.hero-overlay){
+    position: relative;
+    z-index: 2;
+  }
+  .hero-logo{
+    display: none;
+  }
+  .hero-tagline{
+    margin-top: 0.4rem;
+    font-size: 1rem;
+    font-weight:300;
+    letter-spacing: 0.08em;
+    color: rgba(246,242,244,0.65);
+    max-width: 32ch;
+  }
+  .hero-meta{
+    margin-top: 2.6rem;
+    display:flex; gap: 2.5rem; flex-wrap:wrap; justify-content:center;
+    font-size: 0.72rem;
+    letter-spacing: 0.2em;
+    text-transform:uppercase;
+    color: var(--pink-light);
+  }
+  .hero-meta span{ opacity:0.5; margin-right: 0.5rem; color: var(--white); }
+
+  .scroll-cue{
+    position:absolute; bottom: 2.6rem; left:50%; transform: translateX(-50%);
+    width:1px; height: 46px;
+    background: linear-gradient(180deg, var(--pink), transparent);
+  }
+  .scroll-cue::after{
+    content:"";
+    position:absolute; top:0; left:-2px;
+    width:5px; height:5px; border-radius:50%;
+    background: var(--pink-light);
+    box-shadow: 0 0 8px var(--pink);
+    animation: cue 2.4s ease-in-out infinite;
+  }
+  @keyframes cue{
+    0%{ top:0; opacity:1; }
+    80%{ opacity:0; }
+    100%{ top:100%; opacity:0; }
+  }
+
+  section{
+    padding: 8rem clamp(1.5rem, 6vw, 6rem);
+    position: relative;
+    z-index: 1;
+  }
+  .section-head{ margin-bottom: 4rem; }
+  .section-head h2{
+    font-size: clamp(2.6rem, 6vw, 4.2rem);
+    margin-top: 0.6rem;
+    color: var(--white);
+  }
+  .section-head h2 span{ color: var(--pink); }
+
+  .reveal{
+    opacity:0; transform: translateY(28px);
+    transition: opacity 0.9s ease, transform 0.9s ease;
+  }
+  .reveal.in{ opacity:1; transform:none; }
+
+  hr.neon-line{
+    border:none; height:1px;
+    background: var(--line);
+    margin: 0 clamp(1.5rem, 6vw, 6rem);
+    position: relative; z-index:1;
+  }
+
+  .programme{ max-width: 980px; }
+  .prog-row{
+    display:grid;
+    grid-template-columns: 90px 1fr auto;
+    gap: 1.5rem;
+    align-items:baseline;
+    padding: 1.7rem 0;
+    border-bottom: 1px solid var(--line);
+    transition: padding-left 0.4s ease;
+  }
+  .prog-row:hover{ padding-left: 0.8rem; }
+  .prog-date{
+    font-family:'Bebas Neue', sans-serif;
+    color: var(--pink-light);
+    font-size: 1.3rem;
+    letter-spacing: 0.04em;
+  }
+  .prog-name{ font-size: clamp(1.3rem, 3vw, 1.7rem); font-family:'Jost', sans-serif; font-weight:500; }
+  .prog-genre{
+    font-size: 0.68rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(246,242,244,0.5);
+    white-space: nowrap;
+  }
+
+  .spaces{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5px;
+    background: var(--line);
+    margin-top: 1rem;
+  }
+  @media (max-width: 900px){ .spaces{ grid-template-columns: 1fr; } }
+  .spaces.cols-2{ grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 900px){ .spaces.cols-2{ grid-template-columns: 1fr; } }
+
+  .space-card{
+    background: var(--black-2);
+    padding: 3rem 2.2rem;
+    min-height: 340px;
+    display:flex; flex-direction:column; justify-content:flex-end;
+    position:relative;
+    overflow:hidden;
+  }
+  .space-card::before{
+    content:"";
+    position:absolute; inset:0;
+    opacity: 0.9;
+    transition: transform 0.7s ease;
+  }
+  .space-card:hover::before{ transform: scale(1.06); }
+  .space-card.s1::before{ background: radial-gradient(ellipse at 30% 20%, rgba(255,45,120,0.22), #0f0f10 70%); }
+  .space-card.s2::before{ background: radial-gradient(ellipse at 70% 10%, rgba(123,47,247,0.22), #0f0f10 70%); }
+  .space-card.s3::before{ background: radial-gradient(ellipse at 50% 0%, rgba(255,45,120,0.14), #0f0f10 70%); }
+
+  .space-num{
+    position:relative; z-index:2;
+    font-family:'Jost', sans-serif;
+    letter-spacing:0.2em;
+    text-transform:uppercase;
+    color: var(--pink);
+    font-size: 0.72rem;
+    margin-bottom: 1rem;
+  }
+  .space-card h3{
+    position:relative; z-index:2;
+    font-size: 2.1rem;
+    color: var(--white);
+  }
+  .space-card p{
+    position:relative; z-index:2;
+    margin-top: 0.7rem;
+    font-size: 0.9rem;
+    line-height:1.55;
+    color: rgba(246,242,244,0.6);
+    max-width: 34ch;
+  }
+
+  .reservation-wrap{ display:flex; justify-content:center; }
+  .invite-card{
+    width: 100%;
+    max-width: 620px;
+    background: var(--black-2);
+    border: 1px solid var(--line);
+    padding: clamp(2rem, 5vw, 4rem);
+    position: relative;
+    box-shadow: 0 0 60px rgba(255,45,120,0.06);
+  }
+  .invite-top{ text-align:center; margin-bottom: 2.6rem; }
+  .invite-top .wordmark{ font-size:1.4rem; }
+  .invite-top p{
+    margin-top: 0.6rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--pink-light);
+  }
+
+  form{ display:flex; flex-direction:column; gap: 1.6rem; }
+  .field{ position:relative; }
+  .field label{
+    display:block;
+    font-size: 0.68rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(246,242,244,0.5);
+    margin-bottom: 0.5rem;
+  }
+  .field input, .field select{
+    width:100%;
+    background: transparent;
+    border:none;
+    border-bottom: 1px solid var(--line);
+    color: var(--white);
+    font-family: 'Jost', sans-serif;
+    font-size: 1.05rem;
+    padding: 0.5rem 0.1rem;
+    outline:none;
+    transition: border-color 0.3s ease;
+  }
+  .field select option{ background: var(--black-2); }
+  .field input:focus, .field select:focus{ border-color: var(--pink); }
+  .row-2{ display:grid; grid-template-columns: 1fr 1fr; gap: 1.6rem; }
+  @media (max-width:560px){ .row-2{ grid-template-columns: 1fr; } }
+
+  .neon-btn{
+    margin-top: 1rem;
+    align-self:center;
+    background: transparent;
+    border: 1px solid var(--pink);
+    color: var(--pink-light);
+    font-family:'Jost', sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    padding: 1rem 2.6rem;
+    cursor:pointer;
+    position:relative;
+    overflow:hidden;
+    transition: color 0.4s ease, box-shadow 0.4s ease;
+  }
+  .neon-btn::before{
+    content:"";
+    position:absolute; inset:0;
+    background: var(--pink);
+    transform: translateX(-101%);
+    transition: transform 0.45s cubic-bezier(.76,0,.24,1);
+    z-index:0;
+  }
+  .neon-btn span{ position:relative; z-index:1; }
+  .neon-btn:hover{ color: var(--black); box-shadow: 0 0 24px rgba(255,45,120,0.55); }
+  .neon-btn:hover::before{ transform: translateX(0); }
+
+  .confirm-msg{
+    margin-top: 1.4rem;
+    text-align:center;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+    color: var(--pink-light);
+    min-height: 1.4em;
+  }
+
+  footer{
+    padding: 4.5rem clamp(1.5rem, 6vw, 6rem) 3rem;
+    display:flex; flex-wrap:wrap; gap:2.5rem;
+    justify-content:space-between;
+    border-top: 1px solid var(--line);
+    position: relative; z-index:1;
+  }
+  .foot-block h4{
+    font-size: 0.68rem;
+    letter-spacing: 0.22em;
+    text-transform:uppercase;
+    color: var(--pink-light);
+    margin-bottom: 0.9rem;
+  }
+  .foot-block p, .foot-block a{
+    font-size: 0.92rem;
+    color: rgba(246,242,244,0.72);
+    line-height: 1.9;
+    display:block;
+  }
+  .foot-block a:hover{ color: var(--pink-light); }
+  .foot-bottom{
+    width:100%;
+    margin-top: 3rem;
+    padding-top: 1.6rem;
+    border-top: 1px solid var(--line);
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:1rem;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    color: rgba(246,242,244,0.35);
+  }
+
+
+  .menu-grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 1.2rem;
+    margin-top: 1rem;
+  }
+  .menu-card{
+    background: var(--black-2);
+    border: 1px solid var(--line);
+    padding: 1.5rem 1.3rem;
+  }
+  .menu-card.wide{ grid-column: span 2; }
+  @media (max-width: 640px){ .menu-card.wide{ grid-column: span 1; } }
+  .menu-card h3{
+    font-family:'Bebas Neue', sans-serif;
+    color: var(--pink-light);
+    font-size: 1.25rem;
+    letter-spacing:0.04em;
+    margin-bottom: 0.2rem;
+  }
+  .menu-card .menu-price{
+    font-size:0.66rem;
+    letter-spacing:0.15em;
+    text-transform:uppercase;
+    color: var(--pink);
+    margin-bottom:0.7rem;
+    display:block;
+  }
+  .menu-card .menu-sub{
+    font-size:0.64rem;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color: rgba(246,242,244,0.4);
+    margin:0.9rem 0 0.4rem;
+  }
+  .menu-card ul{
+    list-style:none;
+    padding:0; margin:0;
+    font-family:'Jost', sans-serif;
+    font-size:0.88rem;
+    color: rgba(246,242,244,0.78);
+    line-height:1.65;
+  }
+  .menu-card li{
+    display:flex; justify-content:space-between; gap:0.6rem;
+  }
+  .menu-card li .item-price{
+    color: var(--pink-light);
+    font-size:0.78rem;
+    white-space:nowrap;
+  }
+  .chicha-list{ columns:2; column-gap:1.4rem; }
+  @media (max-width:480px){ .chicha-list{ columns:1; } }
+
+</style>
+</head>
+<body>
+
+  <div class="grid-bg"></div>
+  <div class="curtain" id="curtain"></div>
+
+  <header>
+    <a href="tel:+32XXXXXXXXX" class="nav-phone">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      <span>+32 XXX XX XX XX</span>
+    </a>
+    <img src="assets/logo.png" alt="ELEVEN Brussels" class="nav-logo">
+    <nav id="mainNav">
+      <a href="#accueil">Accueil</a>
+      <a href="#menu">Menu</a>
+      <a href="#apropos">À propos</a>
+      <a href="#reservation">Réservations</a>
+      <a href="#contact">Contact</a>
+    </nav>
+    <button class="nav-toggle" id="navToggle" aria-label="Menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </header>
+
+  <section class="hero" id="accueil">
+    <video class="hero-video" autoplay muted loop playsinline poster="assets/hero-poster.jpg">
+      <source src="assets/hero-bg.mp4" type="video/mp4">
+    </video>
+    <div class="hero-overlay"></div>
+    <img src="assets/logo.png" alt="ELEVEN Brussels" class="hero-logo">
+    <div class="hero-buttons" style="display:flex; gap:1.2rem; margin-top:1rem; flex-wrap:wrap; justify-content:center;">
+      <a href="#reservation" style="text-decoration:none; display:inline-block; background:rgba(5,5,5,0.85); backdrop-filter:blur(4px); border:1.5px solid #ff2d78; color:#ffffff; font-family:'Jost', sans-serif; font-size:0.78rem; letter-spacing:0.28em; text-transform:uppercase; padding:1rem 2.2rem; box-shadow:0 0 18px rgba(255,45,120,0.5); transition:background 0.3s ease;">Réservation</a>
+      <a href="#menu" style="text-decoration:none; display:inline-block; background:rgba(5,5,5,0.85); backdrop-filter:blur(4px); border:1.5px solid #ff2d78; color:#ffffff; font-family:'Jost', sans-serif; font-size:0.78rem; letter-spacing:0.28em; text-transform:uppercase; padding:1rem 2.2rem; box-shadow:0 0 18px rgba(255,45,120,0.5); transition:background 0.3s ease;">Menu</a>
+    </div>
+    <div class="scroll-cue"></div>
+  </section>
+
+  <hr class="neon-line">
+
+  <section id="menu">
+    <div class="section-head reveal">
+      <div class="eyebrow">La carte</div>
+      <h2>Le <span>menu</span></h2>
+    </div>
+    <div class="menu-grid reveal" id="menu-grid">
+      <p style="opacity:0.5;">Chargement de la carte…</p>
+    </div>
+  </section>
+
+  <hr class="neon-line">
+
+  <section id="soirees">
+    <div class="section-head reveal">
+      <div class="eyebrow">Le programme</div>
+      <h2>Les <span>soirées</span></h2>
+    </div>
+    <div class="programme reveal" id="programme-list">
+      <p style="opacity:0.5;">Chargement du programme…</p>
+    </div>
+  </section>
+
+  <hr class="neon-line">
+
+  <section id="apropos">
+    <div class="section-head reveal">
+      <div class="eyebrow">Qui sommes-nous</div>
+      <h2>À <span>propos</span></h2>
+    </div>
+    <p class="reveal" style="max-width:640px; color:rgba(246,242,244,0.7); line-height:1.7; margin-bottom:2rem;">
+      ELEVEN Brussels est un club privé au cœur de la capitale, pensé comme une expérience nocturne à part entière : son sur mesure, lumière travaillée, service attentionné.
+    </p>
+    <div class="spaces reveal cols-2">
+      <div class="space-card s1">
+        <div class="space-num">La Salle</div>
+        <h3>Salle Principale</h3>
+        <p>Dancefloor, système son sur mesure et jeux de lumière jusqu'à l'aube.</p>
+      </div>
+      <div class="space-card s2">
+        <div class="space-num">Le Salon</div>
+        <h3>Salon Privé</h3>
+        <p>Banquettes, service dédié, accès sur réservation de table uniquement.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="neon-line">
+
+  <section id="avis">
+    <div class="section-head reveal">
+      <div class="eyebrow">Ils y étaient</div>
+      <h2>Les <span>avis</span></h2>
+    </div>
+    <div class="spaces reveal">
+      <div class="space-card" style="min-height:auto; padding:2.4rem 2rem;">
+        <div class="space-num" style="color:#ff85b3;">★★★★★</div>
+        <p style="color:var(--white); opacity:0.85; font-size:0.95rem; line-height:1.6;">"Ambiance incroyable, le son est parfait et le service en salon privé est top."</p>
+        <p style="margin-top:1rem; font-size:0.75rem; letter-spacing:0.1em; text-transform:uppercase; opacity:0.5;">— Marie</p>
+      </div>
+      <div class="space-card" style="min-height:auto; padding:2.4rem 2rem;">
+        <div class="space-num" style="color:#ff85b3;">★★★★★</div>
+        <p style="color:var(--white); opacity:0.85; font-size:0.95rem; line-height:1.6;">"Une des meilleures soirées à Bruxelles. On y retourne chaque mois."</p>
+        <p style="margin-top:1rem; font-size:0.75rem; letter-spacing:0.1em; text-transform:uppercase; opacity:0.5;">— Yassine</p>
+      </div>
+      <div class="space-card" style="min-height:auto; padding:2.4rem 2rem;">
+        <div class="space-num" style="color:#ff85b3;">★★★★★</div>
+        <p style="color:var(--white); opacity:0.85; font-size:0.95rem; line-height:1.6;">"Déco léchée, staff sympa, réservation simple. Rien à redire."</p>
+        <p style="margin-top:1rem; font-size:0.75rem; letter-spacing:0.1em; text-transform:uppercase; opacity:0.5;">— Laura</p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="neon-line">
+
+  <section id="reservation">
+    <div class="section-head reveal" style="text-align:center;">
+      <div class="eyebrow" style="justify-content:center;">Table &amp; liste</div>
+      <h2>Demander une <span>réservation</span></h2>
+    </div>
+    <div class="reservation-wrap reveal">
+      <div class="invite-card">
+        <div class="invite-top">
+          <div class="wordmark">ELEVEN <span>BXL</span></div>
+          <p>Réservation de table</p>
+        </div>
+        <form id="resForm">
+          <div class="row-2">
+            <div class="field">
+              <label for="nom">Nom</label>
+              <input type="text" id="nom" required>
+            </div>
+            <div class="field">
+              <label for="tel">Téléphone</label>
+              <input type="tel" id="tel" required>
+            </div>
+          </div>
+          <div class="row-2">
+            <div class="field">
+              <label for="date">Date souhaitée</label>
+              <input type="date" id="date" required>
+            </div>
+            <div class="field">
+              <label for="invites">Nombre d'invités</label>
+              <select id="invites">
+                <option>2</option>
+                <option>4</option>
+                <option>6</option>
+                <option>8+</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label for="notes">Souhaits particuliers</label>
+            <input type="text" id="notes" placeholder="Salon privé, anniversaire, bouteille...">
+          </div>
+          <button type="submit" class="neon-btn"><span>Envoyer la demande</span></button>
+          <div class="confirm-msg" id="confirmMsg"></div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <footer id="contact">
+    <div class="foot-block">
+      <h4>Adresse</h4>
+      <p>Rue Haute 391<br>1000 Bruxelles</p>
+    </div>
+    <div class="foot-block">
+      <h4>Horaires</h4>
+      <p>À confirmer</p>
+    </div>
+    <div class="foot-block">
+      <h4>Contact</h4>
+      <p style="opacity:0.5;">À compléter</p>
+    </div>
+    <div class="foot-block">
+      <h4>Suivre</h4>
+      <a href="https://snapchat.com/t/uKdQCDIl" target="_blank" rel="noopener">Snapchat</a>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 Eleven Brussels. Tous droits réservés.</span>
+      <span>Accès réservé aux 18 ans et plus.</span>
+    </div>
+  </footer>
+
+<script>
+  let supa = null;
+  try{
+    if(window.SUPABASE_URL && !window.SUPABASE_URL.includes('TON-PROJET')){
+      supa = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+    }
+  }catch(err){
+    console.error('Supabase non configuré:', err);
+  }
+
+  async function loadProgramme(){
+    const list = document.getElementById('programme-list');
+    if(!supa){
+      list.innerHTML = '<p style="opacity:0.5;">Programme à venir — connecte Supabase pour l\'afficher automatiquement.</p>';
+      return;
+    }
+    try{
+      const { data, error } = await supa.from('soirees').select('*').order('date', { ascending: true });
+      if(error){
+        list.innerHTML = '<p style="opacity:0.5;">Programme indisponible pour le moment.</p>';
+        console.error(error);
+        return;
+      }
+      if(!data || data.length === 0){
+        list.innerHTML = '<p style="opacity:0.5;">Prochaines soirées bientôt annoncées.</p>';
+        return;
+      }
+      list.innerHTML = data.map(s => {
+        const d = new Date(s.date + 'T00:00:00');
+        const dateStr = d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+        return `
+          <div class="prog-row">
+            <div class="prog-date">${dateStr}</div>
+            <div class="prog-name">${s.nom}</div>
+            <div class="prog-genre">${s.genre || ''}</div>
+          </div>`;
+      }).join('');
+    }catch(err){
+      list.innerHTML = '<p style="opacity:0.5;">Programme indisponible pour le moment.</p>';
+      console.error(err);
+    }
+  }
+  loadProgramme();
+
+  function escapeHtml(str){
+    return String(str ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  async function loadMenu(){
+    const grid = document.getElementById('menu-grid');
+    if(!supa){
+      grid.innerHTML = '<p style="opacity:0.5;">Carte à venir — connecte Supabase pour l\'afficher automatiquement.</p>';
+      return;
+    }
+    try{
+      const { data, error } = await supa.from('menu_items').select('*').order('created_at', { ascending: true });
+      if(error){
+        grid.innerHTML = '<p style="opacity:0.5;">Carte indisponible pour le moment.</p>';
+        console.error(error);
+        return;
+      }
+      if(!data || data.length === 0){
+        grid.innerHTML = '<p style="opacity:0.5;">Carte bientôt disponible.</p>';
+        return;
+      }
+
+      const categories = [];
+      const byCategorie = new Map();
+      data.forEach(item => {
+        if(!byCategorie.has(item.categorie)){
+          const cat = { nom: item.categorie, items: [], bySous: new Map(), sousOrder: [] };
+          byCategorie.set(item.categorie, cat);
+          categories.push(cat);
+        }
+        const cat = byCategorie.get(item.categorie);
+        const key = item.sous_categorie || '';
+        if(!cat.bySous.has(key)){
+          cat.bySous.set(key, []);
+          cat.sousOrder.push(key);
+        }
+        cat.bySous.get(key).push(item);
+      });
+
+      const renderItems = (items) => {
+        const cls = items.length > 10 ? ' class="chicha-list"' : '';
+        return `<ul${cls}>${items.map(it => `
+          <li>${escapeHtml(it.nom)}${it.prix ? ` <span class="item-price">${escapeHtml(it.prix)}</span>` : ''}</li>`).join('')}
+        </ul>`;
+      };
+
+      grid.innerHTML = categories.map(cat => {
+        const total = cat.sousOrder.reduce((n, k) => n + cat.bySous.get(k).length, 0);
+        const wide = total > 8 ? ' wide' : '';
+        const body = cat.sousOrder.map(key => {
+          const items = cat.bySous.get(key);
+          const subHead = key ? `<div class="menu-sub">${escapeHtml(key)}</div>` : '';
+          return subHead + renderItems(items);
+        }).join('');
+        return `<div class="menu-card${wide}"><h3>${escapeHtml(cat.nom)}</h3>${body}</div>`;
+      }).join('');
+    }catch(err){
+      grid.innerHTML = '<p style="opacity:0.5;">Carte indisponible pour le moment.</p>';
+      console.error(err);
+    }
+  }
+  loadMenu();
+
+  const navToggle = document.getElementById('navToggle');
+  const mainNav = document.getElementById('mainNav');
+  navToggle.addEventListener('click', () => {
+    const isOpen = mainNav.classList.toggle('open');
+    navToggle.classList.toggle('open', isOpen);
+    navToggle.setAttribute('aria-expanded', isOpen);
+  });
+  mainNav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+    mainNav.classList.remove('open');
+    navToggle.classList.remove('open');
+    navToggle.setAttribute('aria-expanded', 'false');
+  }));
+
+  window.addEventListener('load', () => {
+    setTimeout(() => { document.getElementById('curtain').classList.add('open'); }, 300);
+    const heroVideo = document.querySelector('.hero-video');
+    if(heroVideo){
+      heroVideo.muted = true;
+      const tryPlay = () => heroVideo.play().catch(() => {});
+      tryPlay();
+      document.addEventListener('click', tryPlay, { once: true });
+      document.addEventListener('touchstart', tryPlay, { once: true });
+    }
+  });
+
+  const reveals = document.querySelectorAll('.reveal');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if(entry.isIntersecting){
+        entry.target.classList.add('in');
+        io.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15 });
+  reveals.forEach(el => io.observe(el));
+
+  document.getElementById('resForm').addEventListener('submit', async function(e){
+    e.preventDefault();
+    const msg = document.getElementById('confirmMsg');
+    const submitBtn = this.querySelector('button[type="submit"]');
+
+    const reservation = {
+      nom: document.getElementById('nom').value.trim(),
+      telephone: document.getElementById('tel').value.trim(),
+      date_souhaitee: document.getElementById('date').value,
+      invites: document.getElementById('invites').value,
+      notes: document.getElementById('notes').value.trim()
+    };
+
+    if(!supa){
+      msg.style.color = '#ff5c7a';
+      msg.textContent = "Réservation indisponible pour le moment (configuration en cours).";
+      return;
+    }
+
+    submitBtn.disabled = true;
+    try{
+      const { error } = await supa.from('reservations').insert([reservation]);
+      if(error){
+        msg.style.color = '#ff5c7a';
+        msg.textContent = "Une erreur est survenue, réessaie ou contacte-nous directement.";
+        console.error(error);
+      } else {
+        msg.style.color = '';
+        msg.textContent = "Votre demande a été transmise. Nous revenons vers vous sous 24h.";
+        this.reset();
+      }
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+</script>
+
+</body>
+</html>

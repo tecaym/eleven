@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ELEVEN Brussels — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --ink:#050505; --ink-2:#0f0f10; --bordeaux:#7b2ff7;
+    --brass:#ff2d78; --brass-light:#ff85b3; --ivoire:#f6f2f4;
+    --line: rgba(255,45,120,0.28); --danger:#ff5c7a;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{
+    background: var(--ink); color: var(--ivoire);
+    font-family:'Jost', sans-serif; font-weight:300;
+    min-height:100vh;
+  }
+  .wordmark{ font-family:'Bebas Neue',sans-serif; letter-spacing:0.1em; font-size:1.5rem; }
+  .wordmark span{ color: var(--brass); }
+
+  /* login screen */
+  #login-screen{
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    padding: 2rem;
+  }
+  .login-card{
+    width:100%; max-width:380px;
+    background: var(--ink-2); border:1px solid var(--line);
+    padding: 3rem 2.2rem;
+    text-align:center;
+  }
+  .login-card p.sub{
+    font-size:0.7rem; letter-spacing:0.25em; text-transform:uppercase;
+    color: var(--brass-light); margin: 0.6rem 0 2rem;
+  }
+  .field{ text-align:left; margin-bottom:1.4rem; }
+  .field label{
+    display:block; font-size:0.68rem; letter-spacing:0.2em; text-transform:uppercase;
+    color: rgba(237,227,211,0.55); margin-bottom:0.4rem;
+  }
+  .field input{
+    width:100%; background:transparent; border:none; border-bottom:1px solid var(--line);
+    color: var(--ivoire); font-family:'Cormorant Garamond',serif; font-size:1.1rem;
+    padding:0.5rem 0.1rem; outline:none;
+  }
+  .field input:focus{ border-color: var(--brass-light); }
+  .btn{
+    width:100%; background: var(--brass); color: var(--ink); border:none;
+    font-family:'Jost',sans-serif; font-size:0.75rem; letter-spacing:0.22em; text-transform:uppercase;
+    padding:0.9rem; cursor:pointer; margin-top:0.6rem;
+  }
+  .btn:hover{ background: var(--brass-light); }
+  .btn-outline{
+    background:transparent; border:1px solid var(--line); color: var(--ivoire);
+  }
+  .btn-outline:hover{ border-color: var(--brass-light); color: var(--brass-light); background:transparent; }
+  .error-msg{ color: var(--danger); font-size:0.8rem; margin-top:1rem; min-height:1.2em; }
+
+  /* dashboard */
+  #dashboard{ display:none; }
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 1.6rem clamp(1.2rem,5vw,3rem);
+    border-bottom:1px solid var(--line);
+  }
+  header .logout{
+    font-size:0.68rem; letter-spacing:0.2em; text-transform:uppercase;
+    color: rgba(237,227,211,0.6); cursor:pointer; background:none; border:none; font-family:inherit;
+  }
+  header .logout:hover{ color: var(--brass-light); }
+
+  main{ padding: clamp(1.5rem,5vw,3rem); max-width: 900px; margin:0 auto; }
+
+  .eyebrow{
+    font-size:0.7rem; letter-spacing:0.28em; text-transform:uppercase; color: var(--brass-light);
+    margin-bottom:0.5rem;
+  }
+  h1{ font-family:'Cormorant Garamond',serif; font-weight:400; font-size:2.2rem; margin-bottom:2.2rem; }
+
+  .add-form{
+    display:grid; grid-template-columns: 1.4fr 1fr 1fr auto; gap:1rem;
+    background: var(--ink-2); border:1px solid var(--line); padding:1.4rem;
+    margin-bottom: 2.5rem; align-items:end;
+  }
+  @media (max-width:760px){ .add-form{ grid-template-columns: 1fr 1fr; } }
+  .add-form .field{ margin:0; }
+  .add-form .btn{ width:auto; padding:0.7rem 1.4rem; white-space:nowrap; }
+
+  table{ width:100%; border-collapse:collapse; }
+  th{
+    text-align:left; font-size:0.66rem; letter-spacing:0.18em; text-transform:uppercase;
+    color: rgba(237,227,211,0.5); padding-bottom:0.8rem; border-bottom:1px solid var(--line);
+  }
+  td{
+    padding: 1rem 0.4rem; border-bottom:1px solid var(--line);
+    font-family:'Cormorant Garamond',serif; font-size:1.1rem;
+  }
+  td input{
+    width:100%; background:transparent; border:none; border-bottom:1px solid transparent;
+    color: var(--ivoire); font-family:'Cormorant Garamond',serif; font-size:1.05rem; padding:0.2rem;
+  }
+  td input:focus{ border-color: var(--brass-light); outline:none; }
+  .row-actions{ display:flex; gap:0.8rem; white-space:nowrap; }
+  .row-actions button{
+    background:none; border:none; cursor:pointer; font-family:'Jost',sans-serif;
+    font-size:0.68rem; letter-spacing:0.15em; text-transform:uppercase; padding:0.3rem 0;
+  }
+  .save-btn{ color: var(--brass-light); }
+  .save-btn:hover{ color: var(--brass); }
+  .del-btn{ color: rgba(237,227,211,0.4); }
+  .del-btn:hover{ color: var(--danger); }
+  .status{ font-size:0.85rem; color: var(--brass-light); margin-bottom:1rem; min-height:1.2em; font-style:italic; font-family:'Cormorant Garamond',serif; }
+  .empty{ opacity:0.5; padding:2rem 0; font-style:italic; font-family:'Cormorant Garamond',serif; }
+</style>
+</head>
+<body>
+
+  <div id="login-screen">
+    <div class="login-card">
+      <div class="wordmark">ELEVEN <span>BXL</span></div>
+      <p class="sub">Espace admin</p>
+      <div class="field">
+        <label for="code">Code d'accès</label>
+        <input type="password" id="code" autocomplete="current-password">
+      </div>
+      <button class="btn" id="loginBtn">Se connecter</button>
+      <div class="error-msg" id="loginError"></div>
+    </div>
+  </div>
+
+  <div id="dashboard">
+    <header>
+      <div class="wordmark">ELEVEN <span>BXL</span> <span style="font-size:0.9rem; opacity:0.5; color:inherit;">— admin</span></div>
+      <button class="logout" id="logoutBtn">Se déconnecter</button>
+    </header>
+    <main>
+      <div style="display:flex; gap:2rem; margin-bottom:2.5rem; border-bottom:1px solid var(--line); padding-bottom:0.8rem;">
+        <button class="tab-btn active" data-tab="soirees" style="background:none; border:none; color:var(--ivoire); font-family:'Jost',sans-serif; font-size:0.75rem; letter-spacing:0.2em; text-transform:uppercase; cursor:pointer; padding:0.4rem 0;">Soirées</button>
+        <button class="tab-btn" data-tab="boissons" style="background:none; border:none; color:rgba(237,227,211,0.5); font-family:'Jost',sans-serif; font-size:0.75rem; letter-spacing:0.2em; text-transform:uppercase; cursor:pointer; padding:0.4rem 0;">Boissons</button>
+        <button class="tab-btn" data-tab="reservations" style="background:none; border:none; color:rgba(237,227,211,0.5); font-family:'Jost',sans-serif; font-size:0.75rem; letter-spacing:0.2em; text-transform:uppercase; cursor:pointer; padding:0.4rem 0;">Réservations <span id="resCount" style="color:var(--brass-light);"></span></button>
+      </div>
+
+      <div id="tab-soirees">
+        <div class="eyebrow">Programme</div>
+        <h1>Gérer les soirées</h1>
+
+        <div class="add-form">
+          <div class="field">
+            <label>Nom de la soirée</label>
+            <input type="text" id="new-nom" placeholder="Nuit Bordeaux">
+          </div>
+          <div class="field">
+            <label>Date</label>
+            <input type="date" id="new-date">
+          </div>
+          <div class="field">
+            <label>Style</label>
+            <input type="text" id="new-genre" placeholder="House · Deep">
+          </div>
+          <button class="btn" id="addBtn">Ajouter</button>
+        </div>
+
+        <div class="status" id="statusMsg"></div>
+
+        <table>
+          <thead>
+            <tr><th>Nom</th><th>Date</th><th>Style</th><th></th></tr>
+          </thead>
+          <tbody id="soirees-body"></tbody>
+        </table>
+        <div class="empty" id="emptyMsg" style="display:none;">Aucune soirée programmée pour le moment.</div>
+      </div>
+
+      <div id="tab-boissons" style="display:none;">
+        <div class="eyebrow">La carte</div>
+        <h1>Gérer les boissons</h1>
+
+        <div class="add-form" style="grid-template-columns: 1fr 1fr 1.4fr 0.8fr auto;">
+          <div class="field">
+            <label>Catégorie</label>
+            <input type="text" id="new-categorie" placeholder="Cocktails">
+          </div>
+          <div class="field">
+            <label>Sous-catégorie</label>
+            <input type="text" id="new-sous" placeholder="(optionnel)">
+          </div>
+          <div class="field">
+            <label>Article</label>
+            <input type="text" id="new-item-nom" placeholder="Mojito">
+          </div>
+          <div class="field">
+            <label>Prix</label>
+            <input type="text" id="new-item-prix" placeholder="14 €">
+          </div>
+          <button class="btn" id="addItemBtn">Ajouter</button>
+        </div>
+
+        <div class="status" id="itemStatusMsg"></div>
+
+        <table>
+          <thead>
+            <tr><th>Catégorie</th><th>Sous-catégorie</th><th>Article</th><th>Prix</th><th></th></tr>
+          </thead>
+          <tbody id="menu-items-body"></tbody>
+        </table>
+        <div class="empty" id="itemEmptyMsg" style="display:none;">Aucun article pour le moment.</div>
+      </div>
+
+      <div id="tab-reservations" style="display:none;">
+        <div class="eyebrow">Demandes</div>
+        <h1>Réservations</h1>
+
+        <div class="status" id="resStatusMsg"></div>
+
+        <table>
+          <thead>
+            <tr><th>Nom</th><th>Téléphone</th><th>Date</th><th>Invités</th><th>Souhaits</th><th></th></tr>
+          </thead>
+          <tbody id="reservations-body"></tbody>
+        </table>
+        <div class="empty" id="resEmptyMsg" style="display:none;">Aucune réservation pour le moment.</div>
+      </div>
+    </main>
+  </div>
+
+<script>
+  let supa = null;
+  let supaReady = false;
+  try{
+    if(window.SUPABASE_URL && !window.SUPABASE_URL.includes('TON-PROJET')){
+      supa = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+      supaReady = true;
+    }
+  }catch(err){
+    console.error('Supabase non configuré:', err);
+  }
+
+  const loginScreen = document.getElementById('login-screen');
+  const dashboard = document.getElementById('dashboard');
+  const loginError = document.getElementById('loginError');
+  const statusMsg = document.getElementById('statusMsg');
+
+  if(!supaReady){
+    loginError.textContent = "Supabase n'est pas encore configuré (voir config.js).";
+  }
+
+  function showStatus(msg, isError){
+    statusMsg.textContent = msg;
+    statusMsg.style.color = isError ? '#a94a3a' : '';
+    if(msg) setTimeout(() => { statusMsg.textContent = ''; }, 3000);
+  }
+
+  // ---- Auth ----
+  async function checkSession(){
+    if(!supaReady) return;
+    const { data } = await supa.auth.getSession();
+    if(data.session){
+      loginScreen.style.display = 'none';
+      dashboard.style.display = 'block';
+      loadSoirees();
+      loadReservations();
+    } else {
+      loginScreen.style.display = 'flex';
+      dashboard.style.display = 'none';
+    }
+  }
+
+  const ADMIN_EMAIL = window.ADMIN_EMAIL || 'admin@eleven-brussels.local';
+
+  document.getElementById('loginBtn').addEventListener('click', async () => {
+    if(!supaReady){
+      loginError.textContent = "Supabase n'est pas encore configuré (voir config.js).";
+      return;
+    }
+    loginError.textContent = '';
+    const code = document.getElementById('code').value;
+    const { error } = await supa.auth.signInWithPassword({ email: ADMIN_EMAIL, password: code });
+    if(error){
+      loginError.textContent = "Code incorrect.";
+      document.getElementById('code').value = '';
+      return;
+    }
+    checkSession();
+  });
+
+  document.getElementById('code').addEventListener('keydown', (e) => {
+    if(e.key === 'Enter') document.getElementById('loginBtn').click();
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    await supa.auth.signOut();
+    checkSession();
+  });
+
+  // ---- CRUD soirées ----
+  async function loadSoirees(){
+    const body = document.getElementById('soirees-body');
+    const emptyMsg = document.getElementById('emptyMsg');
+    const { data, error } = await supa.from('soirees').select('*').order('date', { ascending: true });
+
+    if(error){ showStatus("Erreur de chargement : " + error.message, true); return; }
+
+    if(!data || data.length === 0){
+      body.innerHTML = '';
+      emptyMsg.style.display = 'block';
+      return;
+    }
+    emptyMsg.style.display = 'none';
+
+    body.innerHTML = data.map(s => `
+      <tr data-id="${s.id}">
+        <td><input type="text" class="f-nom" value="${s.nom ?? ''}"></td>
+        <td><input type="date" class="f-date" value="${s.date ?? ''}"></td>
+        <td><input type="text" class="f-genre" value="${s.genre ?? ''}"></td>
+        <td class="row-actions">
+          <button class="save-btn">Enregistrer</button>
+          <button class="del-btn">Supprimer</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  document.getElementById('addBtn').addEventListener('click', async () => {
+    const nom = document.getElementById('new-nom').value.trim();
+    const date = document.getElementById('new-date').value;
+    const genre = document.getElementById('new-genre').value.trim();
+    if(!nom || !date){ showStatus("Renseigne au moins un nom et une date.", true); return; }
+
+    const { error } = await supa.from('soirees').insert([{ nom, date, genre }]);
+    if(error){ showStatus("Erreur : " + error.message, true); return; }
+
+    document.getElementById('new-nom').value = '';
+    document.getElementById('new-date').value = '';
+    document.getElementById('new-genre').value = '';
+    showStatus("Soirée ajoutée.");
+    loadSoirees();
+  });
+
+  document.getElementById('soirees-body').addEventListener('click', async (e) => {
+    const row = e.target.closest('tr');
+    if(!row) return;
+    const id = row.dataset.id;
+
+    if(e.target.classList.contains('save-btn')){
+      const nom = row.querySelector('.f-nom').value.trim();
+      const date = row.querySelector('.f-date').value;
+      const genre = row.querySelector('.f-genre').value.trim();
+      const { error } = await supa.from('soirees').update({ nom, date, genre }).eq('id', id);
+      showStatus(error ? "Erreur : " + error.message : "Modifications enregistrées.", !!error);
+    }
+
+    if(e.target.classList.contains('del-btn')){
+      if(!confirm("Supprimer cette soirée ?")) return;
+      const { error } = await supa.from('soirees').delete().eq('id', id);
+      if(error){ showStatus("Erreur : " + error.message, true); return; }
+      showStatus("Soirée supprimée.");
+      loadSoirees();
+    }
+  });
+
+  // ---- CRUD boissons ----
+  function showItemStatus(msg, isError){
+    const el = document.getElementById('itemStatusMsg');
+    el.textContent = msg;
+    el.style.color = isError ? '#a94a3a' : '';
+    if(msg) setTimeout(() => { el.textContent = ''; }, 3000);
+  }
+
+  async function loadMenuItems(){
+    const body = document.getElementById('menu-items-body');
+    const emptyMsg = document.getElementById('itemEmptyMsg');
+    const { data, error } = await supa.from('menu_items').select('*').order('created_at', { ascending: true });
+
+    if(error){ showItemStatus("Erreur de chargement : " + error.message, true); return; }
+
+    if(!data || data.length === 0){
+      body.innerHTML = '';
+      emptyMsg.style.display = 'block';
+      return;
+    }
+    emptyMsg.style.display = 'none';
+
+    body.innerHTML = data.map(it => `
+      <tr data-id="${it.id}">
+        <td><input type="text" class="f-categorie" value="${it.categorie ?? ''}"></td>
+        <td><input type="text" class="f-sous" value="${it.sous_categorie ?? ''}"></td>
+        <td><input type="text" class="f-item-nom" value="${it.nom ?? ''}"></td>
+        <td><input type="text" class="f-item-prix" value="${it.prix ?? ''}"></td>
+        <td class="row-actions">
+          <button class="save-btn">Enregistrer</button>
+          <button class="del-btn">Supprimer</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  document.getElementById('addItemBtn').addEventListener('click', async () => {
+    const categorie = document.getElementById('new-categorie').value.trim();
+    const sous_categorie = document.getElementById('new-sous').value.trim() || null;
+    const nom = document.getElementById('new-item-nom').value.trim();
+    const prix = document.getElementById('new-item-prix').value.trim() || null;
+    if(!categorie || !nom){ showItemStatus("Renseigne au moins une catégorie et un article.", true); return; }
+
+    const { error } = await supa.from('menu_items').insert([{ categorie, sous_categorie, nom, prix }]);
+    if(error){ showItemStatus("Erreur : " + error.message, true); return; }
+
+    document.getElementById('new-categorie').value = '';
+    document.getElementById('new-sous').value = '';
+    document.getElementById('new-item-nom').value = '';
+    document.getElementById('new-item-prix').value = '';
+    showItemStatus("Article ajouté.");
+    loadMenuItems();
+  });
+
+  document.getElementById('menu-items-body').addEventListener('click', async (e) => {
+    const row = e.target.closest('tr');
+    if(!row) return;
+    const id = row.dataset.id;
+
+    if(e.target.classList.contains('save-btn')){
+      const categorie = row.querySelector('.f-categorie').value.trim();
+      const sous_categorie = row.querySelector('.f-sous').value.trim() || null;
+      const nom = row.querySelector('.f-item-nom').value.trim();
+      const prix = row.querySelector('.f-item-prix').value.trim() || null;
+      const { error } = await supa.from('menu_items').update({ categorie, sous_categorie, nom, prix }).eq('id', id);
+      showItemStatus(error ? "Erreur : " + error.message : "Modifications enregistrées.", !!error);
+    }
+
+    if(e.target.classList.contains('del-btn')){
+      if(!confirm("Supprimer cet article ?")) return;
+      const { error } = await supa.from('menu_items').delete().eq('id', id);
+      if(error){ showItemStatus("Erreur : " + error.message, true); return; }
+      showItemStatus("Article supprimé.");
+      loadMenuItems();
+    }
+  });
+
+  // ---- Onglets ----
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.remove('active');
+        b.style.color = 'rgba(237,227,211,0.5)';
+      });
+      btn.classList.add('active');
+      btn.style.color = 'var(--ivoire)';
+      const tab = btn.dataset.tab;
+      document.getElementById('tab-soirees').style.display = tab === 'soirees' ? 'block' : 'none';
+      document.getElementById('tab-boissons').style.display = tab === 'boissons' ? 'block' : 'none';
+      document.getElementById('tab-reservations').style.display = tab === 'reservations' ? 'block' : 'none';
+      if(tab === 'boissons') loadMenuItems();
+      if(tab === 'reservations') loadReservations();
+    });
+  });
+
+  // ---- Réservations ----
+  function showResStatus(msg, isError){
+    const el = document.getElementById('resStatusMsg');
+    el.textContent = msg;
+    el.style.color = isError ? '#ff5c7a' : '';
+    if(msg) setTimeout(() => { el.textContent = ''; }, 3000);
+  }
+
+  async function loadReservations(){
+    const body = document.getElementById('reservations-body');
+    const emptyMsg = document.getElementById('resEmptyMsg');
+    const countEl = document.getElementById('resCount');
+    const { data, error } = await supa.from('reservations').select('*').order('date_souhaitee', { ascending: true });
+
+    if(error){ showResStatus("Erreur de chargement : " + error.message, true); return; }
+
+    if(countEl) countEl.textContent = data && data.length ? `(${data.length})` : '';
+
+    if(!data || data.length === 0){
+      body.innerHTML = '';
+      emptyMsg.style.display = 'block';
+      return;
+    }
+    emptyMsg.style.display = 'none';
+
+    body.innerHTML = data.map(r => {
+      const d = r.date_souhaitee ? new Date(r.date_souhaitee + 'T00:00:00').toLocaleDateString('fr-FR', { day:'numeric', month:'short' }) : '—';
+      return `
+        <tr data-id="${r.id}">
+          <td>${r.nom ?? ''}</td>
+          <td><a href="tel:${r.telephone ?? ''}" style="color:var(--brass-light);">${r.telephone ?? ''}</a></td>
+          <td>${d}</td>
+          <td>${r.invites ?? ''}</td>
+          <td style="font-family:'Jost',sans-serif; font-size:0.85rem; opacity:0.75;">${r.notes ?? ''}</td>
+          <td class="row-actions"><button class="del-btn">Supprimer</button></td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  document.getElementById('reservations-body').addEventListener('click', async (e) => {
+    if(!e.target.classList.contains('del-btn')) return;
+    const row = e.target.closest('tr');
+    const id = row.dataset.id;
+    if(!confirm("Supprimer cette réservation ?")) return;
+    const { error } = await supa.from('reservations').delete().eq('id', id);
+    if(error){ showResStatus("Erreur : " + error.message, true); return; }
+    showResStatus("Réservation supprimée.");
+    loadReservations();
+  });
+
+  checkSession();
+</script>
+
+</body>
+</html>
