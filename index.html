@@ -369,36 +369,29 @@
   }
   .field select option{ background: var(--black-2); }
   .field input:focus, .field select:focus{ border-color: var(--pink); }
+  .field input:disabled{ opacity:0.5; }
   .row-2{ display:grid; grid-template-columns: 1fr 1fr; gap: 1.6rem; }
   @media (max-width:560px){ .row-2{ grid-template-columns: 1fr; } }
 
   .neon-btn{
     margin-top: 1rem;
     align-self:center;
-    background: transparent;
-    border: 1px solid var(--pink);
-    color: var(--pink-light);
+    background: rgba(5,5,5,0.85);
+    backdrop-filter: blur(4px);
+    border: 1.5px solid var(--pink);
+    color: #ffffff;
     font-family:'Jost', sans-serif;
-    font-size: 0.75rem;
+    font-size: 0.78rem;
     letter-spacing: 0.28em;
     text-transform: uppercase;
     padding: 1rem 2.6rem;
     cursor:pointer;
     position:relative;
-    overflow:hidden;
-    transition: color 0.4s ease, box-shadow 0.4s ease;
-  }
-  .neon-btn::before{
-    content:"";
-    position:absolute; inset:0;
-    background: var(--pink);
-    transform: translateX(-101%);
-    transition: transform 0.45s cubic-bezier(.76,0,.24,1);
-    z-index:0;
+    box-shadow: 0 0 18px rgba(255,45,120,0.5);
+    transition: box-shadow 0.3s ease, background 0.3s ease;
   }
   .neon-btn span{ position:relative; z-index:1; }
-  .neon-btn:hover{ color: var(--black); box-shadow: 0 0 24px rgba(255,45,120,0.55); }
-  .neon-btn:hover::before{ transform: translateX(0); }
+  .neon-btn:hover{ box-shadow: 0 0 24px rgba(255,45,120,0.75); background: rgba(20,5,12,0.9); }
 
   .confirm-msg{
     margin-top: 1.4rem;
@@ -731,7 +724,7 @@
           data.map(s => {
             const d = new Date(s.date + 'T00:00:00');
             const dateStr = d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
-            return `<option value="${escapeHtml(s.nom)}">${escapeHtml(s.nom)} — ${dateStr}</option>`;
+            return `<option value="${escapeHtml(s.nom)}" data-date="${s.date}">${escapeHtml(s.nom)} — ${dateStr}</option>`;
           }).join('');
       }
     }catch(err){
@@ -839,6 +832,17 @@
     });
   }, { threshold: 0.15 });
   reveals.forEach(el => io.observe(el));
+
+  document.getElementById('evenement').addEventListener('change', function(){
+    const dateInput = document.getElementById('date');
+    const selectedDate = this.selectedOptions[0]?.dataset.date;
+    if(selectedDate){
+      dateInput.value = selectedDate;
+      dateInput.disabled = true;
+    } else {
+      dateInput.disabled = false;
+    }
+  });
 
   document.getElementById('resForm').addEventListener('submit', async function(e){
     e.preventDefault();
