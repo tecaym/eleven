@@ -54,18 +54,40 @@
   .grid-bg{
     position: fixed; inset:-5%; z-index:0; pointer-events:none;
     background-image:
-      radial-gradient(circle at 50% 0%, rgba(255,45,120,0.22), transparent 55%),
-      radial-gradient(circle at 90% 15%, rgba(255,45,120,0.16), transparent 45%),
-      radial-gradient(circle at 85% 65%, rgba(123,47,247,0.18), transparent 50%),
-      radial-gradient(circle at 8% 80%, rgba(255,133,179,0.14), transparent 45%),
-      radial-gradient(circle at 15% 35%, rgba(123,47,247,0.12), transparent 40%),
-      repeating-linear-gradient(0deg, rgba(255,45,120,0.05) 0px, rgba(255,45,120,0.05) 1px, transparent 1px, transparent 64px),
-      repeating-linear-gradient(90deg, rgba(255,45,120,0.05) 0px, rgba(255,45,120,0.05) 1px, transparent 1px, transparent 64px);
+      radial-gradient(circle at 50% 0%, rgba(255,45,120,0.35), transparent 55%),
+      radial-gradient(circle at 90% 15%, rgba(255,45,120,0.28), transparent 45%),
+      radial-gradient(circle at 85% 65%, rgba(255,133,179,0.30), transparent 50%),
+      radial-gradient(circle at 8% 80%, rgba(255,133,179,0.24), transparent 45%),
+      radial-gradient(circle at 15% 35%, rgba(255,133,179,0.22), transparent 40%),
+      repeating-linear-gradient(0deg, rgba(255,45,120,0.09) 0px, rgba(255,45,120,0.09) 1px, transparent 1px, transparent 64px),
+      repeating-linear-gradient(90deg, rgba(255,45,120,0.09) 0px, rgba(255,45,120,0.09) 1px, transparent 1px, transparent 64px);
     animation: bgDrift 22s ease-in-out infinite;
   }
   @keyframes bgDrift{
     0%, 100%{ transform: translate(0,0) scale(1); }
     50%{ transform: translate(-2%, 2%) scale(1.05); }
+  }
+  .neon-orb{
+    position: fixed; z-index:0; pointer-events:none;
+    border-radius:50%; filter: blur(70px); opacity:0.6;
+  }
+  .neon-orb.a{
+    width:420px; height:420px; top:-120px; left:-140px;
+    background: var(--pink);
+    animation: orbFloatA 19s ease-in-out infinite;
+  }
+  .neon-orb.b{
+    width:360px; height:360px; bottom:-100px; right:-120px;
+    background: var(--pink-light);
+    animation: orbFloatB 25s ease-in-out infinite;
+  }
+  @keyframes orbFloatA{
+    0%, 100%{ transform: translate(0,0); }
+    50%{ transform: translate(140px, 200px); }
+  }
+  @keyframes orbFloatB{
+    0%, 100%{ transform: translate(0,0); }
+    50%{ transform: translate(-160px, -180px); }
   }
 
   .curtain{
@@ -334,7 +356,7 @@
   }
   .space-card:hover::before{ transform: scale(1.06); }
   .space-card.s1::before{ background: radial-gradient(ellipse at 30% 20%, rgba(255,45,120,0.22), #0f0f10 70%); }
-  .space-card.s2::before{ background: radial-gradient(ellipse at 70% 10%, rgba(123,47,247,0.22), #0f0f10 70%); }
+  .space-card.s2::before{ background: radial-gradient(ellipse at 70% 10%, rgba(255,133,179,0.22), #0f0f10 70%); }
   .space-card.s3::before{ background: radial-gradient(ellipse at 50% 0%, rgba(255,45,120,0.14), #0f0f10 70%); }
 
   .space-num{
@@ -474,6 +496,7 @@
     justify-content:space-between;
     border-top: 1px solid var(--line);
     position: relative; z-index:1;
+    background: var(--black);
   }
   .foot-block h4{
     font-size: 0.68rem;
@@ -560,6 +583,8 @@
 <body>
 
   <div class="grid-bg"></div>
+  <div class="neon-orb a"></div>
+  <div class="neon-orb b"></div>
   <div class="curtain" id="curtain"></div>
 
   <header>
@@ -865,12 +890,13 @@
       return;
     }
     try{
-      const { data, error } = await supa.from('menu_items').select('*').order('created_at', { ascending: true });
+      const { data: rawData, error } = await supa.from('menu_items').select('*').order('created_at', { ascending: true });
       if(error){
         grid.innerHTML = '<p style="opacity:0.5;">Carte indisponible pour le moment.</p>';
         console.error(error);
         return;
       }
+      const data = (rawData || []).filter(it => it.disponible !== false);
       if(!data || data.length === 0){
         grid.innerHTML = '<p style="opacity:0.5;">Carte bientôt disponible.</p>';
         return;

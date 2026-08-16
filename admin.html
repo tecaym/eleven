@@ -204,7 +204,7 @@
 
         <div class="table-scroll"><table>
           <thead>
-            <tr><th>Catégorie</th><th>Sous-catégorie</th><th>Article</th><th>Prix</th><th></th></tr>
+            <tr><th>Catégorie</th><th>Sous-catégorie</th><th>Article</th><th>Prix</th><th>Dispo</th><th></th></tr>
           </thead>
           <tbody id="menu-items-body"></tbody>
         </table></div>
@@ -378,18 +378,22 @@
     }
     emptyMsg.style.display = 'none';
 
-    body.innerHTML = data.map(it => `
-      <tr data-id="${it.id}">
+    body.innerHTML = data.map(it => {
+      const dispo = it.disponible !== false;
+      return `
+      <tr data-id="${it.id}" style="${dispo ? '' : 'opacity:0.45;'}">
         <td><input type="text" class="f-categorie" value="${it.categorie ?? ''}"></td>
         <td><input type="text" class="f-sous" value="${it.sous_categorie ?? ''}"></td>
         <td><input type="text" class="f-item-nom" value="${it.nom ?? ''}"></td>
         <td><input type="text" class="f-item-prix" value="${it.prix ?? ''}"></td>
+        <td style="text-align:center;"><input type="checkbox" class="f-dispo" ${dispo ? 'checked' : ''} style="width:18px; height:18px; cursor:pointer;"></td>
         <td class="row-actions">
           <button class="save-btn">Enregistrer</button>
           <button class="del-btn">Supprimer</button>
         </td>
       </tr>
-    `).join('');
+    `;
+    }).join('');
   }
 
   document.getElementById('addItemBtn').addEventListener('click', async () => {
@@ -431,6 +435,17 @@
       showItemStatus("Article supprimé.");
       loadMenuItems();
     }
+  });
+
+  document.getElementById('menu-items-body').addEventListener('change', async (e) => {
+    if(!e.target.classList.contains('f-dispo')) return;
+    const row = e.target.closest('tr');
+    const id = row.dataset.id;
+    const disponible = e.target.checked;
+    const { error } = await supa.from('menu_items').update({ disponible }).eq('id', id);
+    if(error){ showItemStatus("Erreur : " + error.message, true); return; }
+    row.style.opacity = disponible ? '' : '0.45';
+    showItemStatus(disponible ? "Article réactivé." : "Article désactivé.");
   });
 
   // ---- Onglets ----
