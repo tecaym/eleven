@@ -90,7 +90,8 @@
   .add-form .field{ margin:0; }
   .add-form .btn{ width:auto; padding:0.7rem 1.4rem; white-space:nowrap; }
 
-  table{ width:100%; border-collapse:collapse; }
+  .table-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  table{ width:100%; min-width:600px; border-collapse:collapse; }
   th{
     text-align:left; font-size:0.66rem; letter-spacing:0.18em; text-transform:uppercase;
     color: rgba(237,227,211,0.5); padding-bottom:0.8rem; border-bottom:1px solid var(--line);
@@ -166,12 +167,12 @@
 
         <div class="status" id="statusMsg"></div>
 
-        <table>
+        <div class="table-scroll"><table>
           <thead>
             <tr><th>Nom</th><th>Date</th><th>Style</th><th></th></tr>
           </thead>
           <tbody id="soirees-body"></tbody>
-        </table>
+        </table></div>
         <div class="empty" id="emptyMsg" style="display:none;">Aucune soirée programmée pour le moment.</div>
       </div>
 
@@ -201,12 +202,12 @@
 
         <div class="status" id="itemStatusMsg"></div>
 
-        <table>
+        <div class="table-scroll"><table>
           <thead>
             <tr><th>Catégorie</th><th>Sous-catégorie</th><th>Article</th><th>Prix</th><th></th></tr>
           </thead>
           <tbody id="menu-items-body"></tbody>
-        </table>
+        </table></div>
         <div class="empty" id="itemEmptyMsg" style="display:none;">Aucun article pour le moment.</div>
       </div>
 
@@ -216,12 +217,12 @@
 
         <div class="status" id="resStatusMsg"></div>
 
-        <table>
+        <div class="table-scroll"><table>
           <thead>
             <tr><th>Nom</th><th>Téléphone</th><th>Date</th><th>Invités</th><th>Événement</th><th>Souhaits</th><th></th></tr>
           </thead>
           <tbody id="reservations-body"></tbody>
-        </table>
+        </table></div>
         <div class="empty" id="resEmptyMsg" style="display:none;">Aucune réservation pour le moment.</div>
       </div>
     </main>
@@ -243,10 +244,6 @@
   const dashboard = document.getElementById('dashboard');
   const loginError = document.getElementById('loginError');
   const statusMsg = document.getElementById('statusMsg');
-
-  if(!supaReady){
-    loginError.textContent = "Supabase n'est pas encore configuré (voir config.js).";
-  }
 
   function showStatus(msg, isError){
     statusMsg.textContent = msg;
@@ -272,10 +269,7 @@
   const ADMIN_EMAIL = window.ADMIN_EMAIL || 'admin@eleven-brussels.local';
 
   document.getElementById('loginBtn').addEventListener('click', async () => {
-    if(!supaReady){
-      loginError.textContent = "Supabase n'est pas encore configuré (voir config.js).";
-      return;
-    }
+    if(!supaReady) return;
     loginError.textContent = '';
     const code = document.getElementById('code').value;
     const { error } = await supa.auth.signInWithPassword({ email: ADMIN_EMAIL, password: code });
