@@ -648,6 +648,12 @@
             </div>
           </div>
           <div class="field">
+            <label for="evenement">Événement</label>
+            <select id="evenement">
+              <option value="">Aucun événement particulier</option>
+            </select>
+          </div>
+          <div class="field">
             <label for="notes">Souhaits particuliers</label>
             <input type="text" id="notes" placeholder="Salon privé, anniversaire, bouteille...">
           </div>
@@ -718,6 +724,16 @@
             <div class="prog-genre">${s.genre || ''}</div>
           </div>`;
       }).join('');
+
+      const evSelect = document.getElementById('evenement');
+      if(evSelect){
+        evSelect.innerHTML = '<option value="">Aucun événement particulier</option>' +
+          data.map(s => {
+            const d = new Date(s.date + 'T00:00:00');
+            const dateStr = d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+            return `<option value="${escapeHtml(s.nom)}">${escapeHtml(s.nom)} — ${dateStr}</option>`;
+          }).join('');
+      }
     }catch(err){
       list.innerHTML = '<p style="opacity:0.5;">Programme indisponible pour le moment.</p>';
       console.error(err);
@@ -834,6 +850,7 @@
       telephone: document.getElementById('tel').value.trim(),
       date_souhaitee: document.getElementById('date').value,
       invites: document.getElementById('invites').value,
+      evenement: document.getElementById('evenement').value || null,
       notes: document.getElementById('notes').value.trim()
     };
 
