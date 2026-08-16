@@ -218,7 +218,7 @@
 
         <table>
           <thead>
-            <tr><th>Nom</th><th>Téléphone</th><th>Date</th><th>Invités</th><th>Souhaits</th><th></th></tr>
+            <tr><th>Nom</th><th>Téléphone</th><th>Date</th><th>Invités</th><th>Événement</th><th>Souhaits</th><th></th></tr>
           </thead>
           <tbody id="reservations-body"></tbody>
         </table>
@@ -490,6 +490,7 @@
           <td><a href="tel:${r.telephone ?? ''}" style="color:var(--brass-light);">${r.telephone ?? ''}</a></td>
           <td>${d}</td>
           <td>${r.invites ?? ''}</td>
+          <td style="color:var(--brass-light);">${r.evenement ?? '—'}</td>
           <td style="font-family:'Jost',sans-serif; font-size:0.85rem; opacity:0.75;">${r.notes ?? ''}</td>
           <td class="row-actions"><button class="del-btn">Supprimer</button></td>
         </tr>
