@@ -143,6 +143,7 @@
         <button class="tab-btn active" data-tab="soirees" style="background:none; border:none; color:var(--ivoire); font-family:'Jost',sans-serif; font-size:0.75rem; letter-spacing:0.2em; text-transform:uppercase; cursor:pointer; padding:0.4rem 0;">Soirées</button>
         <button class="tab-btn" data-tab="boissons" style="background:none; border:none; color:rgba(237,227,211,0.5); font-family:'Jost',sans-serif; font-size:0.75rem; letter-spacing:0.2em; text-transform:uppercase; cursor:pointer; padding:0.4rem 0;">Boissons</button>
         <button class="tab-btn" data-tab="reservations" style="background:none; border:none; color:rgba(237,227,211,0.5); font-family:'Jost',sans-serif; font-size:0.75rem; letter-spacing:0.2em; text-transform:uppercase; cursor:pointer; padding:0.4rem 0;">Réservations <span id="resCount" style="color:var(--brass-light);"></span></button>
+        <button class="tab-btn" data-tab="messages" style="background:none; border:none; color:rgba(237,227,211,0.5); font-family:'Jost',sans-serif; font-size:0.75rem; letter-spacing:0.2em; text-transform:uppercase; cursor:pointer; padding:0.4rem 0;">Messages <span id="msgCount" style="color:var(--brass-light);"></span></button>
       </div>
 
       <div id="tab-soirees">
@@ -224,6 +225,21 @@
           <tbody id="reservations-body"></tbody>
         </table></div>
         <div class="empty" id="resEmptyMsg" style="display:none;">Aucune réservation pour le moment.</div>
+      </div>
+
+      <div id="tab-messages" style="display:none;">
+        <div class="eyebrow">Contact</div>
+        <h1>Messages</h1>
+
+        <div class="status" id="msgStatusMsg"></div>
+
+        <div class="table-scroll"><table>
+          <thead>
+            <tr><th>Nom</th><th>Email</th><th>Message</th><th></th></tr>
+          </thead>
+          <tbody id="messages-body"></tbody>
+        </table></div>
+        <div class="empty" id="msgEmptyMsg" style="display:none;">Aucun message pour le moment.</div>
       </div>
     </main>
   </div>
@@ -461,8 +477,10 @@
       document.getElementById('tab-soirees').style.display = tab === 'soirees' ? 'block' : 'none';
       document.getElementById('tab-boissons').style.display = tab === 'boissons' ? 'block' : 'none';
       document.getElementById('tab-reservations').style.display = tab === 'reservations' ? 'block' : 'none';
+      document.getElementById('tab-messages').style.display = tab === 'messages' ? 'block' : 'none';
       if(tab === 'boissons') loadMenuItems();
       if(tab === 'reservations') loadReservations();
+      if(tab === 'messages') loadMessages();
     });
   });
 
@@ -516,6 +534,52 @@
     if(error){ showResStatus("Erreur : " + error.message, true); return; }
     showResStatus("Réservation supprimée.");
     loadReservations();
+  });
+
+  // ---- Messages ----
+  function showMsgStatus(msg, isError){
+    const el = document.getElementById('msgStatusMsg');
+    el.textContent = msg;
+    el.style.color = isError ? '#ff5c7a' : '';
+    if(msg) setTimeout(() => { el.textContent = ''; }, 3000);
+  }
+
+  async function loadMessages(){
+    const body = document.getElementById('messages-body');
+    const emptyMsg = document.getElementById('msgEmptyMsg');
+    const countEl = document.getElementById('msgCount');
+    const { data, error } = await supa.from('contact_messages').select('*').order('created_at', { ascending: false });
+
+    if(error){ showMsgStatus("Erreur de chargement : " + error.message, true); return; }
+
+    if(countEl) countEl.textContent = data && data.length ? `(${data.length})` : '';
+
+    if(!data || data.length === 0){
+      body.innerHTML = '';
+      emptyMsg.style.display = 'block';
+      return;
+    }
+    emptyMsg.style.display = 'none';
+
+    body.innerHTML = data.map(m => `
+      <tr data-id="${m.id}">
+        <td>${m.nom ?? ''}</td>
+        <td><a href="mailto:${m.email ?? ''}" style="color:var(--brass-light);">${m.email ?? ''}</a></td>
+        <td style="font-family:'Jost',sans-serif; font-size:0.85rem; opacity:0.75; max-width:320px;">${m.message ?? ''}</td>
+        <td class="row-actions"><button class="del-btn">Supprimer</button></td>
+      </tr>
+    `).join('');
+  }
+
+  document.getElementById('messages-body').addEventListener('click', async (e) => {
+    if(!e.target.classList.contains('del-btn')) return;
+    const row = e.target.closest('tr');
+    const id = row.dataset.id;
+    if(!confirm("Supprimer ce message ?")) return;
+    const { error } = await supa.from('contact_messages').delete().eq('id', id);
+    if(error){ showMsgStatus("Erreur : " + error.message, true); return; }
+    showMsgStatus("Message supprimé.");
+    loadMessages();
   });
 
   checkSession();

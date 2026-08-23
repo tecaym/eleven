@@ -189,13 +189,13 @@
     overflow: hidden;
   }
   .hero-video{
-    position: absolute; inset:0;
-    width: 100%; height: 100%;
+    position: absolute; inset:-2rem;
+    width: calc(100% + 4rem); height: calc(100% + 4rem);
     object-fit: cover;
     z-index: 0;
   }
   .hero-overlay{
-    position: absolute; inset:0;
+    position: absolute; inset:-2rem;
     z-index: 1;
     background:
       linear-gradient(180deg, rgba(5,5,5,0.55) 0%, rgba(5,5,5,0.35) 40%, rgba(5,5,5,0.75) 100%);
@@ -412,7 +412,7 @@
     color: rgba(246,242,244,0.5);
     margin-bottom: 0.5rem;
   }
-  .field input, .field select{
+  .field input, .field select, .field textarea{
     width:100%;
     background: transparent;
     border:none;
@@ -423,9 +423,10 @@
     padding: 0.5rem 0.1rem;
     outline:none;
     transition: border-color 0.3s ease;
+    resize: vertical;
   }
   .field select option{ background: var(--black-2); }
-  .field input:focus, .field select:focus{ border-color: var(--pink); }
+  .field input:focus, .field select:focus, .field textarea:focus{ border-color: var(--pink); }
   .field input:disabled{ opacity:0.5; }
   .row-2{ display:grid; grid-template-columns: 1fr 1fr; gap: 1.6rem; }
   @media (max-width:560px){ .row-2{ grid-template-columns: 1fr; } }
@@ -802,6 +803,41 @@
     </div>
   </section>
 
+  <hr class="neon-line">
+
+  <section id="nous-ecrire">
+    <div class="section-head reveal" style="text-align:center;">
+      <div class="eyebrow" style="justify-content:center;">Une question</div>
+      <h2>Nous <span>écrire</span></h2>
+    </div>
+    <div class="reservation-wrap reveal">
+      <div class="invite-card">
+        <div class="invite-top">
+          <div class="wordmark">ELEVEN <span>BXL</span></div>
+          <p>Envoyer un message</p>
+        </div>
+        <form id="contactForm">
+          <div class="row-2">
+            <div class="field">
+              <label for="cNom">Nom</label>
+              <input type="text" id="cNom" required>
+            </div>
+            <div class="field">
+              <label for="cEmail">Email</label>
+              <input type="email" id="cEmail" required>
+            </div>
+          </div>
+          <div class="field">
+            <label for="cMessage">Message</label>
+            <textarea id="cMessage" rows="4" required></textarea>
+          </div>
+          <button type="submit" class="neon-btn"><span>Envoyer le message</span></button>
+          <div class="confirm-msg" id="contactConfirmMsg"></div>
+        </form>
+      </div>
+    </div>
+  </section>
+
   <footer id="contact">
     <div class="foot-block">
       <h4>Adresse</h4>
@@ -813,7 +849,7 @@
     </div>
     <div class="foot-block">
       <h4>Contact</h4>
-      <p style="opacity:0.5;">À compléter</p>
+      <a href="mailto:contact@elevenbrussels.com">contact@elevenbrussels.com</a>
     </div>
     <div class="foot-block">
       <h4>Suivre</h4>
@@ -1033,6 +1069,40 @@
       } else {
         msg.style.color = '';
         msg.textContent = "Votre demande a été transmise. Nous revenons vers vous sous 24h.";
+        this.reset();
+      }
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+
+  document.getElementById('contactForm').addEventListener('submit', async function(e){
+    e.preventDefault();
+    const msg = document.getElementById('contactConfirmMsg');
+    const submitBtn = this.querySelector('button[type="submit"]');
+
+    const contact = {
+      nom: document.getElementById('cNom').value.trim(),
+      email: document.getElementById('cEmail').value.trim(),
+      message: document.getElementById('cMessage').value.trim()
+    };
+
+    if(!supa){
+      msg.style.color = '#ff5c7a';
+      msg.textContent = "Envoi indisponible pour le moment (configuration en cours).";
+      return;
+    }
+
+    submitBtn.disabled = true;
+    try{
+      const { error } = await supa.from('contact_messages').insert([contact]);
+      if(error){
+        msg.style.color = '#ff5c7a';
+        msg.textContent = "Une erreur est survenue, réessaie ou écris-nous directement par email.";
+        console.error(error);
+      } else {
+        msg.style.color = '';
+        msg.textContent = "Message envoyé. Nous revenons vers toi rapidement.";
         this.reset();
       }
     } finally {
