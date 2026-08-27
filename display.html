@@ -682,10 +682,6 @@ adminClose.addEventListener('click', e => {
 
 adminToggle.addEventListener('click', e => {
   e.stopPropagation();
-  if (document.fullscreenElement) {
-    document.exitFullscreen().catch(() => {});
-    return;
-  }
   const open = adminPanel.classList.toggle('open');
   if (open) inputShow.focus();
 });
