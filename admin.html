@@ -144,6 +144,7 @@
         <button class="tab-btn" data-tab="boissons" style="background:none; border:none; color:rgba(237,227,211,0.5); font-family:'Jost',sans-serif; font-size:0.75rem; letter-spacing:0.2em; text-transform:uppercase; cursor:pointer; padding:0.4rem 0;">Boissons</button>
         <button class="tab-btn" data-tab="reservations" style="background:none; border:none; color:rgba(237,227,211,0.5); font-family:'Jost',sans-serif; font-size:0.75rem; letter-spacing:0.2em; text-transform:uppercase; cursor:pointer; padding:0.4rem 0;">Réservations <span id="resCount" style="color:var(--brass-light);"></span></button>
         <button class="tab-btn" data-tab="messages" style="background:none; border:none; color:rgba(237,227,211,0.5); font-family:'Jost',sans-serif; font-size:0.75rem; letter-spacing:0.2em; text-transform:uppercase; cursor:pointer; padding:0.4rem 0;">Messages <span id="msgCount" style="color:var(--brass-light);"></span></button>
+        <button class="tab-btn" data-tab="display" style="background:none; border:none; color:rgba(237,227,211,0.5); font-family:'Jost',sans-serif; font-size:0.75rem; letter-spacing:0.2em; text-transform:uppercase; cursor:pointer; padding:0.4rem 0;">📺 Display TV</button>
       </div>
 
       <div id="tab-soirees">
@@ -240,6 +241,22 @@
           <tbody id="messages-body"></tbody>
         </table></div>
         <div class="empty" id="msgEmptyMsg" style="display:none;">Aucun message pour le moment.</div>
+      </div>
+
+      <div id="tab-display" style="display:none;">
+        <div class="eyebrow">Télévisions</div>
+        <h1>Display TV</h1>
+        <div style="background:var(--ink-2); border:1px solid var(--line); padding:2.5rem; text-align:center; max-width:500px;">
+          <p style="font-family:'Cormorant Garamond',serif; font-size:1.1rem; opacity:0.7; margin-bottom:2rem;">
+            Lance le programme d'animation sur les télévisions de la salle.
+          </p>
+          <button onclick="window.open('display.html','_blank')" style="background:var(--brass); color:var(--ink); border:none; font-family:'Jost',sans-serif; font-size:0.85rem; letter-spacing:0.25em; text-transform:uppercase; padding:1rem 2.5rem; cursor:pointer; width:100%; margin-bottom:1rem;">
+            ▶ Lancer le Display
+          </button>
+          <p style="font-size:0.7rem; letter-spacing:0.15em; text-transform:uppercase; opacity:0.4;">
+            Ouvre en plein écran dans un nouvel onglet
+          </p>
+        </div>
       </div>
     </main>
   </div>
@@ -478,6 +495,7 @@
       document.getElementById('tab-boissons').style.display = tab === 'boissons' ? 'block' : 'none';
       document.getElementById('tab-reservations').style.display = tab === 'reservations' ? 'block' : 'none';
       document.getElementById('tab-messages').style.display = tab === 'messages' ? 'block' : 'none';
+      document.getElementById('tab-display').style.display = tab === 'display' ? 'block' : 'none';
       if(tab === 'boissons') loadMenuItems();
       if(tab === 'reservations') loadReservations();
       if(tab === 'messages') loadMessages();
