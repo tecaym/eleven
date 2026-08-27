@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Club Display</title>
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@900&family=Rajdhani:wght@400;500;600;700&display=swap">
 
@@ -240,7 +242,7 @@
     height: 38px;
     border-radius: 50%;
     border: 1px solid var(--dim);
-    background: rgba(13,13,31,0.85);
+    background: rgba(0,0,0,0.85);
     color: var(--white);
     cursor: pointer;
     font-size: 1rem;
@@ -513,6 +515,11 @@
     </div>
     <button class="launch-btn" id="launchBtn">▶ Lancer le show</button>
   </div>
+
+  <div class="field" style="margin-top:1.4rem;">
+    <p class="field-label">Affichage</p>
+    <button class="launch-btn" id="fullscreenBtn">⛶ Plein écran</button>
+  </div>
 </aside>
 
 <script>
@@ -648,6 +655,10 @@ const showNameEl  = document.getElementById('showName');
 
 adminToggle.addEventListener('click', e => {
   e.stopPropagation();
+  if (document.fullscreenElement) {
+    document.exitFullscreen().catch(() => {});
+    return;
+  }
   const open = adminPanel.classList.toggle('open');
   if (open) inputShow.focus();
 });
@@ -704,11 +715,7 @@ function setMode(mode) {
   }
 }
 
-// Tabs ne ferment pas le panneau
-btnShow.addEventListener('click',   () => setMode('show'));
-btnVeille.addEventListener('click', () => setMode('veille'));
-
-// Start in veille mode
+// Start in veille mode (par défaut, en attendant la sync Supabase)
 setMode('veille');
 
 
@@ -716,15 +723,15 @@ setMode('veille');
 
 const launchBtn = document.getElementById('launchBtn');
 
-function launchShow() {
-  // Appliquer le nom saisi
-  const show = inputShow.value.trim() || 'NOM DU SHOW';
-  showNameEl.textContent = show.toUpperCase();
-  // Passer l'écran en show
+// Joue uniquement l'animation visuelle (pas de synchro) — utilisé en local
+// comme pour appliquer un état reçu d'un autre appareil.
+function playLaunchAnimation(name) {
+  const show = (name || 'NOM DU SHOW').toUpperCase();
+  showNameEl.textContent = show;
   logoWrap.classList.remove('visible');
   displayArea.style.display = 'flex';
-  adminPanel.classList.remove('open');
-  // Lancer animation
+  btnShow.classList.add('active');
+  btnVeille.classList.remove('active');
   showNameEl.classList.remove('anim-flip', 'anim-flash');
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
@@ -741,7 +748,108 @@ function launchShow() {
   }, flipDuration);
 }
 
+// ── Synchro Supabase (tous les écrans affichent la même chose) ──────
+let supa = null;
+try {
+  if (window.SUPABASE_URL && !window.SUPABASE_URL.includes('TON-PROJET')) {
+    supa = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+  }
+} catch (err) {
+  console.error('Supabase non configuré:', err);
+}
+
+let currentState = { mode: 'veille', show_name: null };
+
+function statesEqual(a, b) {
+  return !!a && !!b && a.mode === b.mode && (a.show_name || '') === (b.show_name || '');
+}
+
+function applyRemoteState(state, animate) {
+  if (!state) return;
+  currentState = { mode: state.mode, show_name: state.show_name };
+  if (state.mode === 'veille') {
+    setMode('veille');
+  } else {
+    if (inputShow) inputShow.value = state.show_name || '';
+    if (animate) {
+      playLaunchAnimation(state.show_name);
+    } else {
+      const show = (state.show_name || 'NOM DU SHOW').toUpperCase();
+      showNameEl.textContent = show;
+      logoWrap.classList.remove('visible');
+      displayArea.style.display = 'flex';
+      btnShow.classList.add('active');
+      btnVeille.classList.remove('active');
+      sectionShow.style.display = 'flex';
+    }
+  }
+}
+
+async function pushState(mode, showName) {
+  currentState = { mode, show_name: showName };
+  if (!supa) return;
+  await supa.from('display_state')
+    .update({ mode, show_name: showName, updated_at: new Date().toISOString() })
+    .eq('id', 1);
+}
+
+async function loadInitialState() {
+  if (!supa) return;
+  const { data, error } = await supa.from('display_state').select('*').eq('id', 1).single();
+  if (!error && data) applyRemoteState(data, false);
+}
+loadInitialState();
+
+if (supa) {
+  supa.channel('display_state_changes')
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'display_state' }, (payload) => {
+      const newState = payload.new;
+      if (!statesEqual(newState, currentState)) {
+        applyRemoteState(newState, true);
+      } else {
+        currentState = { mode: newState.mode, show_name: newState.show_name };
+      }
+    })
+    .subscribe();
+}
+
+// Tabs ne ferment pas le panneau
+btnShow.addEventListener('click', () => setMode('show'));
+btnVeille.addEventListener('click', () => {
+  setMode('veille');
+  pushState('veille', currentState.show_name);
+});
+
+function launchShow() {
+  const show = inputShow.value.trim() || 'NOM DU SHOW';
+  adminPanel.classList.remove('open');
+  playLaunchAnimation(show);
+  pushState('show', show);
+}
+
 launchBtn.addEventListener('click', launchShow);
+
+// ── Plein écran ─────────────────────────────────────────────────────
+const fullscreenBtn = document.getElementById('fullscreenBtn');
+function updateFullscreenLabel() {
+  fullscreenBtn.textContent = document.fullscreenElement ? '⛶ Quitter le plein écran' : '⛶ Plein écran';
+}
+fullscreenBtn.addEventListener('click', () => {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen().catch(() => {});
+  }
+});
+document.addEventListener('fullscreenchange', updateFullscreenLabel);
+
+// Le tout premier clic n'importe où sur la page déclenche le plein écran
+// (les navigateurs bloquent le plein écran automatique sans geste utilisateur)
+document.addEventListener('click', () => {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  }
+}, { once: true });
 
 </script>
 </body>
