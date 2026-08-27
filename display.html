@@ -284,6 +284,9 @@
   }
 
   .admin-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     font-weight: 700;
     font-size: 0.75rem;
     letter-spacing: 0.3em;
@@ -291,6 +294,24 @@
     color: var(--white);
     padding-bottom: 1rem;
     border-bottom: 1px solid var(--dim);
+  }
+
+  .admin-close {
+    background: none;
+    border: none;
+    color: var(--dim);
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 0 0 0.6rem;
+    letter-spacing: 0;
+    transition: color 0.2s;
+  }
+
+  .admin-close:hover,
+  .admin-close:focus-visible {
+    color: var(--magenta);
+    outline: none;
   }
 
   .field {
@@ -497,7 +518,7 @@
 <button class="admin-toggle" id="adminToggle" title="Paramètres">⚙</button>
 
 <aside class="admin-panel" id="adminPanel" role="dialog" aria-label="Paramètres d'affichage">
-  <p class="admin-heading">Configurer l'affichage</p>
+  <p class="admin-heading"><span>Configurer l'affichage</span><button class="admin-close" id="adminClose" title="Fermer" aria-label="Fermer">✕</button></p>
 
 
   <div class="field">
@@ -650,8 +671,14 @@ setInterval(tick, 1000);
 
 const adminToggle = document.getElementById('adminToggle');
 const adminPanel  = document.getElementById('adminPanel');
+const adminClose  = document.getElementById('adminClose');
 const inputShow   = document.getElementById('inputShow');
 const showNameEl  = document.getElementById('showName');
+
+adminClose.addEventListener('click', e => {
+  e.stopPropagation();
+  adminPanel.classList.remove('open');
+});
 
 adminToggle.addEventListener('click', e => {
   e.stopPropagation();
