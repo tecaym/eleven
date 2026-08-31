@@ -116,6 +116,55 @@
   .del-btn:hover{ color: var(--danger); }
   .status{ font-size:0.85rem; color: var(--brass-light); margin-bottom:1rem; min-height:1.2em; font-style:italic; font-family:'Cormorant Garamond',serif; }
   .empty{ opacity:0.5; padding:2rem 0; font-style:italic; font-family:'Cormorant Garamond',serif; }
+
+  /* ---- Boissons : sections par catégorie ---- */
+  .menu-cat-section{ margin-bottom: 2.6rem; }
+  .menu-cat-title{
+    font-family:'Cormorant Garamond',serif; font-size:1.6rem; color: var(--brass-light);
+    padding-bottom:0.6rem; margin-bottom:1.1rem; border-bottom:1px solid var(--brass);
+    display:flex; align-items:baseline; justify-content:space-between; gap:1rem;
+  }
+  .menu-cat-title .count{
+    font-family:'Jost',sans-serif; font-size:0.62rem; letter-spacing:0.15em; text-transform:uppercase; opacity:0.45;
+  }
+  .menu-item-card{
+    background: var(--ink-2); border:1px solid var(--line); padding:1.2rem 1.4rem;
+    margin-bottom:0.9rem; display:grid; grid-template-columns: 1.2fr 1.4fr 0.7fr auto auto; gap:1.2rem; align-items:end;
+  }
+  @media (max-width:760px){
+    .menu-item-card{ grid-template-columns: 1fr 1fr; }
+    .menu-item-card .mf-actions{ grid-column: 1 / -1; }
+  }
+  .menu-item-card.is-off{ opacity:0.45; }
+  .menu-item-card .mf{ display:flex; flex-direction:column; gap:0.35rem; }
+  .menu-item-card .mf label{
+    font-size:0.62rem; letter-spacing:0.15em; text-transform:uppercase; color: rgba(237,227,211,0.5);
+  }
+  .menu-item-card .mf input[type="text"]{
+    background:transparent; border:none; border-bottom:1px solid var(--line); color: var(--ivoire);
+    font-family:'Cormorant Garamond',serif; font-size:1.1rem; padding:0.3rem 0.1rem; width:100%; outline:none;
+  }
+  .menu-item-card .mf input[type="text"]:focus{ border-color: var(--brass-light); }
+  .mf-actions{ display:flex; align-items:center; gap:0.9rem; flex-wrap:wrap; }
+  .dispo-toggle{
+    display:flex; align-items:center; gap:0.5rem; cursor:pointer; user-select:none;
+    font-size:0.65rem; letter-spacing:0.1em; text-transform:uppercase; white-space:nowrap;
+  }
+  .dispo-toggle input{ width:17px; height:17px; cursor:pointer; accent-color: var(--brass); }
+  .dispo-toggle .dispo-label{ color: var(--brass-light); }
+  .dispo-toggle.off .dispo-label{ color: rgba(237,227,211,0.4); }
+  .card-save-btn{
+    background: var(--brass); color: var(--ink); border:none; font-family:'Jost',sans-serif;
+    font-size:0.68rem; letter-spacing:0.15em; text-transform:uppercase; padding:0.6rem 1.1rem; cursor:pointer;
+  }
+  .card-save-btn:hover{ background: var(--brass-light); }
+  .card-save-btn.saved{ background:#3fae6a; }
+  .card-del-btn{
+    background:transparent; border:1px solid var(--line); color: rgba(237,227,211,0.5);
+    font-family:'Jost',sans-serif; font-size:0.68rem; letter-spacing:0.15em; text-transform:uppercase;
+    padding:0.6rem 1rem; cursor:pointer;
+  }
+  .card-del-btn:hover{ border-color: var(--danger); color: var(--danger); }
 </style>
 </head>
 <body>
@@ -182,18 +231,19 @@
         <div class="eyebrow">La carte</div>
         <h1>Gérer les boissons</h1>
 
-        <div class="add-form" style="grid-template-columns: 1fr 1fr 1.4fr 0.8fr auto;">
+        <div class="add-form" style="grid-template-columns: 1fr 1.2fr 1.3fr 0.7fr auto; margin-bottom:0.6rem;">
           <div class="field">
             <label>Catégorie</label>
-            <input type="text" id="new-categorie" placeholder="Cocktails">
+            <input type="text" id="new-categorie" list="categorie-list" placeholder="Cocktails">
+            <datalist id="categorie-list"></datalist>
           </div>
           <div class="field">
-            <label>Sous-catégorie</label>
-            <input type="text" id="new-sous" placeholder="(optionnel)">
-          </div>
-          <div class="field">
-            <label>Article</label>
+            <label>Produit</label>
             <input type="text" id="new-item-nom" placeholder="Mojito">
+          </div>
+          <div class="field">
+            <label>Description</label>
+            <input type="text" id="new-sous" placeholder="(optionnel)">
           </div>
           <div class="field">
             <label>Prix</label>
@@ -201,15 +251,11 @@
           </div>
           <button class="btn" id="addItemBtn">Ajouter</button>
         </div>
+        <p style="font-size:0.7rem; letter-spacing:0.05em; opacity:0.45; margin-bottom:2.5rem;">Astuce : clique dans "Catégorie" pour voir les catégories déjà créées et éviter les doublons.</p>
 
         <div class="status" id="itemStatusMsg"></div>
 
-        <div class="table-scroll"><table>
-          <thead>
-            <tr><th>Catégorie</th><th>Sous-catégorie</th><th>Article</th><th>Prix</th><th>Dispo</th><th></th></tr>
-          </thead>
-          <tbody id="menu-items-body"></tbody>
-        </table></div>
+        <div id="menu-items-container"></div>
         <div class="empty" id="itemEmptyMsg" style="display:none;">Aucun article pour le moment.</div>
       </div>
 
@@ -397,71 +443,115 @@
     if(msg) setTimeout(() => { el.textContent = ''; }, 3000);
   }
 
+  function escapeHtml(s){
+    return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
   async function loadMenuItems(){
-    const body = document.getElementById('menu-items-body');
+    const container = document.getElementById('menu-items-container');
     const emptyMsg = document.getElementById('itemEmptyMsg');
-    const { data, error } = await supa.from('menu_items').select('*').order('created_at', { ascending: true });
+    const { data, error } = await supa.from('menu_items').select('*').order('categorie', { ascending: true }).order('created_at', { ascending: true });
 
     if(error){ showItemStatus("Erreur de chargement : " + error.message, true); return; }
 
+    // liste des catégories existantes, pour les suggestions du formulaire d'ajout
+    const categories = [...new Set((data || []).map(it => it.categorie).filter(Boolean))].sort((a,b) => a.localeCompare(b, 'fr'));
+    document.getElementById('categorie-list').innerHTML = categories.map(c => `<option value="${escapeHtml(c)}"></option>`).join('');
+
     if(!data || data.length === 0){
-      body.innerHTML = '';
+      container.innerHTML = '';
       emptyMsg.style.display = 'block';
       return;
     }
     emptyMsg.style.display = 'none';
 
-    body.innerHTML = data.map(it => {
-      const dispo = it.disponible !== false;
-      return `
-      <tr data-id="${it.id}" style="${dispo ? '' : 'opacity:0.45;'}">
-        <td><input type="text" class="f-categorie" value="${it.categorie ?? ''}"></td>
-        <td><input type="text" class="f-sous" value="${it.sous_categorie ?? ''}"></td>
-        <td><input type="text" class="f-item-nom" value="${it.nom ?? ''}"></td>
-        <td><input type="text" class="f-item-prix" value="${it.prix ?? ''}"></td>
-        <td style="text-align:center;"><input type="checkbox" class="f-dispo" ${dispo ? 'checked' : ''} style="width:18px; height:18px; cursor:pointer;"></td>
-        <td class="row-actions">
-          <button class="save-btn">Enregistrer</button>
-          <button class="del-btn">Supprimer</button>
-        </td>
-      </tr>
-    `;
-    }).join('');
+    // regrouper les articles par catégorie
+    const groups = new Map();
+    data.forEach(it => {
+      const cat = it.categorie || 'Sans catégorie';
+      if(!groups.has(cat)) groups.set(cat, []);
+      groups.get(cat).push(it);
+    });
+
+    container.innerHTML = [...groups.entries()].map(([cat, items]) => `
+      <div class="menu-cat-section">
+        <div class="menu-cat-title">
+          <span>${escapeHtml(cat)}</span>
+          <span class="count">${items.length} article${items.length > 1 ? 's' : ''}</span>
+        </div>
+        ${items.map(it => {
+          const dispo = it.disponible !== false;
+          return `
+          <div class="menu-item-card ${dispo ? '' : 'is-off'}" data-id="${it.id}">
+            <div class="mf">
+              <label>Produit</label>
+              <input type="text" class="f-item-nom" value="${escapeHtml(it.nom)}">
+            </div>
+            <div class="mf">
+              <label>Description</label>
+              <input type="text" class="f-sous" value="${escapeHtml(it.sous_categorie)}">
+            </div>
+            <div class="mf">
+              <label>Prix</label>
+              <input type="text" class="f-item-prix" value="${escapeHtml(it.prix)}">
+            </div>
+            <div class="mf-actions">
+              <label class="dispo-toggle ${dispo ? '' : 'off'}">
+                <input type="checkbox" class="f-dispo" ${dispo ? 'checked' : ''}>
+                <span class="dispo-label">${dispo ? 'Actif' : 'Désactivé'}</span>
+              </label>
+            </div>
+            <div class="mf-actions">
+              <button class="card-save-btn">Enregistrer</button>
+              <button class="card-del-btn">Supprimer</button>
+            </div>
+          </div>
+        `;
+        }).join('')}
+      </div>
+    `).join('');
   }
 
   document.getElementById('addItemBtn').addEventListener('click', async () => {
     const categorie = document.getElementById('new-categorie').value.trim();
-    const sous_categorie = document.getElementById('new-sous').value.trim() || null;
     const nom = document.getElementById('new-item-nom').value.trim();
+    const sous_categorie = document.getElementById('new-sous').value.trim() || null;
     const prix = document.getElementById('new-item-prix').value.trim() || null;
-    if(!categorie || !nom){ showItemStatus("Renseigne au moins une catégorie et un article.", true); return; }
+    if(!categorie || !nom){ showItemStatus("Renseigne au moins une catégorie et un produit.", true); return; }
 
     const { error } = await supa.from('menu_items').insert([{ categorie, sous_categorie, nom, prix }]);
     if(error){ showItemStatus("Erreur : " + error.message, true); return; }
 
     document.getElementById('new-categorie').value = '';
-    document.getElementById('new-sous').value = '';
     document.getElementById('new-item-nom').value = '';
+    document.getElementById('new-sous').value = '';
     document.getElementById('new-item-prix').value = '';
     showItemStatus("Article ajouté.");
     loadMenuItems();
   });
 
-  document.getElementById('menu-items-body').addEventListener('click', async (e) => {
-    const row = e.target.closest('tr');
-    if(!row) return;
-    const id = row.dataset.id;
+  document.getElementById('menu-items-container').addEventListener('click', async (e) => {
+    const card = e.target.closest('.menu-item-card');
+    if(!card) return;
+    const id = card.dataset.id;
 
-    if(e.target.classList.contains('save-btn')){
-      const categorie = row.querySelector('.f-categorie').value.trim();
-      const sous_categorie = row.querySelector('.f-sous').value.trim() || null;
-      const nom = row.querySelector('.f-item-nom').value.trim();
-      const prix = row.querySelector('.f-item-prix').value.trim() || null;
-      const { error } = await supa.from('menu_items').update({ categorie, sous_categorie, nom, prix }).eq('id', id);
-      showItemStatus(error ? "Erreur : " + error.message : "Modifications enregistrées.", !!error);
+    if(e.target.classList.contains('card-save-btn')){
+      const btn = e.target;
+      const nom = card.querySelector('.f-item-nom').value.trim();
+      const sous_categorie = card.querySelector('.f-sous').value.trim() || null;
+      const prix = card.querySelector('.f-item-prix').value.trim() || null;
+      if(!nom){ showItemStatus("Le nom du produit ne peut pas être vide.", true); return; }
+      btn.disabled = true;
+      const { error } = await supa.from('menu_items').update({ nom, sous_categorie, prix }).eq('id', id);
+      btn.disabled = false;
+      if(error){ showItemStatus("Erreur : " + error.message, true); return; }
+      showItemStatus("Modifications enregistrées.");
+      btn.textContent = 'Enregistré ✓';
+      btn.classList.add('saved');
+      setTimeout(() => { btn.textContent = 'Enregistrer'; btn.classList.remove('saved'); }, 1800);
     }
 
-    if(e.target.classList.contains('del-btn')){
+    if(e.target.classList.contains('card-del-btn')){
       if(!confirm("Supprimer cet article ?")) return;
       const { error } = await supa.from('menu_items').delete().eq('id', id);
       if(error){ showItemStatus("Erreur : " + error.message, true); return; }
@@ -470,14 +560,17 @@
     }
   });
 
-  document.getElementById('menu-items-body').addEventListener('change', async (e) => {
+  document.getElementById('menu-items-container').addEventListener('change', async (e) => {
     if(!e.target.classList.contains('f-dispo')) return;
-    const row = e.target.closest('tr');
-    const id = row.dataset.id;
+    const card = e.target.closest('.menu-item-card');
+    const id = card.dataset.id;
     const disponible = e.target.checked;
     const { error } = await supa.from('menu_items').update({ disponible }).eq('id', id);
-    if(error){ showItemStatus("Erreur : " + error.message, true); return; }
-    row.style.opacity = disponible ? '' : '0.45';
+    if(error){ showItemStatus("Erreur : " + error.message, true); e.target.checked = !disponible; return; }
+    card.classList.toggle('is-off', !disponible);
+    const toggle = card.querySelector('.dispo-toggle');
+    toggle.classList.toggle('off', !disponible);
+    toggle.querySelector('.dispo-label').textContent = disponible ? 'Actif' : 'Désactivé';
     showItemStatus(disponible ? "Article réactivé." : "Article désactivé.");
   });
 
