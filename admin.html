@@ -153,6 +153,35 @@
   .dispo-toggle input{ width:17px; height:17px; cursor:pointer; accent-color: var(--brass); }
   .dispo-toggle .dispo-label{ color: var(--brass-light); }
   .dispo-toggle.off .dispo-label{ color: rgba(237,227,211,0.4); }
+  .cat-add-btn{
+    background:none; border:1px solid var(--line); color: var(--brass-light);
+    font-family:'Jost',sans-serif; font-size:0.6rem; letter-spacing:0.15em; text-transform:uppercase;
+    padding:0.35rem 0.7rem; cursor:pointer; white-space:nowrap;
+  }
+  .cat-add-btn:hover{ border-color: var(--brass-light); color: var(--brass); }
+  .cat-quick-add{
+    display:grid; grid-template-columns: 1.4fr 1.6fr 0.8fr auto; gap:1.1rem; align-items:end;
+    background: var(--ink); border:1px dashed var(--line); padding:1.1rem 1.3rem; margin-bottom:1rem;
+  }
+  @media (max-width:760px){ .cat-quick-add{ grid-template-columns: 1fr 1fr; } .cat-quick-add .mf-actions{ grid-column:1/-1; } }
+  .cat-quick-add .mf{ display:flex; flex-direction:column; gap:0.35rem; }
+  .cat-quick-add .mf label{ font-size:0.62rem; letter-spacing:0.15em; text-transform:uppercase; color: rgba(237,227,211,0.5); }
+  .cat-quick-add .mf input[type="text"]{
+    background:transparent; border:none; border-bottom:1px solid var(--line); color: var(--ivoire);
+    font-family:'Cormorant Garamond',serif; font-size:1.1rem; padding:0.3rem 0.1rem; width:100%; outline:none;
+  }
+  .cat-quick-add .mf input[type="text"]:focus{ border-color: var(--brass-light); }
+  .qa-submit{
+    background: var(--brass); color: var(--ink); border:none; font-family:'Jost',sans-serif;
+    font-size:0.68rem; letter-spacing:0.15em; text-transform:uppercase; padding:0.6rem 1.1rem; cursor:pointer;
+  }
+  .qa-submit:hover{ background: var(--brass-light); }
+  .qa-cancel{
+    background:transparent; border:1px solid var(--line); color: rgba(237,227,211,0.5);
+    font-family:'Jost',sans-serif; font-size:0.68rem; letter-spacing:0.15em; text-transform:uppercase;
+    padding:0.6rem 1rem; cursor:pointer; margin-left:0.8rem;
+  }
+  .qa-cancel:hover{ border-color: var(--danger); color: var(--danger); }
   .menu-cat-footer{ display:flex; justify-content:flex-start; margin-top:0.4rem; }
   .cat-save-btn{
     background: var(--brass); color: var(--ink); border:none; font-family:'Jost',sans-serif;
@@ -232,27 +261,20 @@
         <div class="eyebrow">La carte</div>
         <h1>Gérer les boissons</h1>
 
-        <div class="add-form" style="grid-template-columns: 1fr 1.2fr 1.3fr 0.7fr auto; margin-bottom:0.6rem;">
+        <div class="eyebrow" style="margin-top:-1.4rem; margin-bottom:0.8rem;">Nouvelle catégorie</div>
+        <div class="add-form" style="grid-template-columns: 1.3fr 1.3fr auto; margin-bottom:0.6rem;">
           <div class="field">
             <label>Catégorie</label>
             <input type="text" id="new-categorie" list="categorie-list" placeholder="Cocktails">
             <datalist id="categorie-list"></datalist>
           </div>
           <div class="field">
-            <label>Produit</label>
+            <label>Premier produit</label>
             <input type="text" id="new-item-nom" placeholder="Mojito">
           </div>
-          <div class="field">
-            <label>Description</label>
-            <input type="text" id="new-sous" placeholder="(optionnel)">
-          </div>
-          <div class="field">
-            <label>Prix</label>
-            <input type="text" id="new-item-prix" placeholder="14 €">
-          </div>
-          <button class="btn" id="addItemBtn">Ajouter</button>
+          <button class="btn" id="addItemBtn">Créer la catégorie</button>
         </div>
-        <p style="font-size:0.7rem; letter-spacing:0.05em; opacity:0.45; margin-bottom:2.5rem;">Astuce : clique dans "Catégorie" pour voir les catégories déjà créées et éviter les doublons.</p>
+        <p style="font-size:0.7rem; letter-spacing:0.05em; opacity:0.45; margin-bottom:2.5rem;">Pour une catégorie qui existe déjà, utilise plutôt le bouton "+ Ajouter" à côté de son titre plus bas.</p>
 
         <div class="status" id="itemStatusMsg"></div>
 
@@ -478,7 +500,28 @@
       <div class="menu-cat-section" data-categorie="${escapeHtml(cat)}">
         <div class="menu-cat-title">
           <span>${escapeHtml(cat)}</span>
-          <span class="count">${items.length} article${items.length > 1 ? 's' : ''}</span>
+          <span style="display:flex; align-items:center; gap:1rem;">
+            <span class="count">${items.length} article${items.length > 1 ? 's' : ''}</span>
+            <button type="button" class="cat-add-btn">+ Ajouter</button>
+          </span>
+        </div>
+        <div class="cat-quick-add" style="display:none;">
+          <div class="mf">
+            <label>Produit</label>
+            <input type="text" class="qa-nom" placeholder="Mojito">
+          </div>
+          <div class="mf">
+            <label>Description</label>
+            <input type="text" class="qa-sous" placeholder="(optionnel)">
+          </div>
+          <div class="mf">
+            <label>Prix</label>
+            <input type="text" class="qa-prix" placeholder="14 €">
+          </div>
+          <div class="mf-actions">
+            <button type="button" class="qa-submit">Ajouter</button>
+            <button type="button" class="qa-cancel">Annuler</button>
+          </div>
         </div>
         ${items.map(it => {
           const dispo = it.disponible !== false;
@@ -518,22 +561,55 @@
   document.getElementById('addItemBtn').addEventListener('click', async () => {
     const categorie = document.getElementById('new-categorie').value.trim();
     const nom = document.getElementById('new-item-nom').value.trim();
-    const sous_categorie = document.getElementById('new-sous').value.trim() || null;
-    const prix = document.getElementById('new-item-prix').value.trim() || null;
-    if(!categorie || !nom){ showItemStatus("Renseigne au moins une catégorie et un produit.", true); return; }
+    if(!categorie || !nom){ showItemStatus("Renseigne un nom de catégorie et un premier produit.", true); return; }
 
-    const { error } = await supa.from('menu_items').insert([{ categorie, sous_categorie, nom, prix }]);
+    const { error } = await supa.from('menu_items').insert([{ categorie, nom }]);
     if(error){ showItemStatus("Erreur : " + error.message, true); return; }
 
     document.getElementById('new-categorie').value = '';
     document.getElementById('new-item-nom').value = '';
-    document.getElementById('new-sous').value = '';
-    document.getElementById('new-item-prix').value = '';
-    showItemStatus("Article ajouté.");
+    showItemStatus("Catégorie créée.");
     loadMenuItems();
   });
 
   document.getElementById('menu-items-container').addEventListener('click', async (e) => {
+
+    // "+ Ajouter" à côté du titre de la catégorie : affiche le mini-formulaire d'ajout.
+    if(e.target.classList.contains('cat-add-btn')){
+      const section = e.target.closest('.menu-cat-section');
+      const quickAdd = section.querySelector('.cat-quick-add');
+      quickAdd.style.display = 'grid';
+      quickAdd.querySelector('.qa-nom').focus();
+      return;
+    }
+
+    // Annuler l'ajout rapide.
+    if(e.target.classList.contains('qa-cancel')){
+      const quickAdd = e.target.closest('.cat-quick-add');
+      quickAdd.querySelector('.qa-nom').value = '';
+      quickAdd.querySelector('.qa-sous').value = '';
+      quickAdd.querySelector('.qa-prix').value = '';
+      quickAdd.style.display = 'none';
+      return;
+    }
+
+    // Valider l'ajout rapide : crée un nouveau produit directement dans cette catégorie.
+    if(e.target.classList.contains('qa-submit')){
+      const section = e.target.closest('.menu-cat-section');
+      const categorie = section.dataset.categorie;
+      const quickAdd = e.target.closest('.cat-quick-add');
+      const nom = quickAdd.querySelector('.qa-nom').value.trim();
+      const sous_categorie = quickAdd.querySelector('.qa-sous').value.trim() || null;
+      const prix = quickAdd.querySelector('.qa-prix').value.trim() || null;
+      if(!nom){ showItemStatus("Renseigne un nom de produit.", true); return; }
+
+      const { error } = await supa.from('menu_items').insert([{ categorie, nom, sous_categorie, prix }]);
+      if(error){ showItemStatus("Erreur : " + error.message, true); return; }
+
+      showItemStatus("Article ajouté.");
+      loadMenuItems();
+      return;
+    }
 
     // Un seul bouton "Enregistrer" par catégorie : sauvegarde tous les articles modifiés dans cette section d'un coup.
     if(e.target.classList.contains('cat-save-btn')){
