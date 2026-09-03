@@ -455,16 +455,6 @@
     text-shadow: 0 0 .5em var(--glow-color);
     transition: all 0.3s;
   }
-  .neon-btn::after{
-    pointer-events:none;
-    content:"";
-    position:absolute;
-    top:120%; left:0; height:100%; width:100%;
-    background-color: var(--glow-spread-color);
-    filter: blur(2em);
-    opacity:.7;
-    transform: perspective(1.5em) rotateX(35deg) scale(1,.6);
-  }
   .neon-btn span{ position:relative; z-index:1; }
   .neon-btn:hover{
     color: var(--btn-color);
