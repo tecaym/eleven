@@ -491,7 +491,11 @@
     min-height: 1.4em;
   }
 
-  .call-waiter{ text-align:center; margin-bottom: 3rem; }
+  .call-waiter{
+    text-align:center; margin: 0 auto 3rem; max-width: 480px;
+    background: rgba(5,5,5,0.82); border:1px solid var(--line);
+    padding: 2.4rem 1.6rem;
+  }
   .call-waiter-icon-btn{
     width: 84px; height: 84px; border-radius: 50%; border:none; padding:0; cursor:pointer;
     background:transparent; overflow:hidden;
@@ -503,8 +507,8 @@
   .call-waiter-icon-btn:active{ transform: scale(0.97); }
   .call-waiter-icon-btn:disabled{ opacity:0.55; cursor:default; transform:none; box-shadow:none; }
   .call-waiter-label{
-    margin-top: 0.9rem; font-size:0.72rem; letter-spacing:0.18em; text-transform:uppercase;
-    color: rgba(246,242,244,0.7);
+    margin-top: 0.9rem; font-size:0.8rem; font-weight:700; letter-spacing:0.18em; text-transform:uppercase;
+    color: var(--white);
   }
   .call-waiter-form{
     max-width: 380px; margin: 1.6rem auto 0; text-align:left;
