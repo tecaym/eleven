@@ -492,6 +492,20 @@
   }
 
   .call-waiter{ text-align:center; margin-bottom: 3rem; }
+  .call-waiter-icon-btn{
+    width: 84px; height: 84px; border-radius: 50%; border:none; padding:0; cursor:pointer;
+    background:transparent; overflow:hidden;
+    box-shadow: 0 0 0 rgba(255,45,120,0);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+  .call-waiter-icon-btn img{ width:100%; height:100%; display:block; }
+  .call-waiter-icon-btn:hover{ transform: scale(1.06); box-shadow: 0 0 24px rgba(255,45,120,0.55); }
+  .call-waiter-icon-btn:active{ transform: scale(0.97); }
+  .call-waiter-icon-btn:disabled{ opacity:0.55; cursor:default; transform:none; box-shadow:none; }
+  .call-waiter-label{
+    margin-top: 0.9rem; font-size:0.72rem; letter-spacing:0.18em; text-transform:uppercase;
+    color: rgba(246,242,244,0.7);
+  }
   .call-waiter-form{
     max-width: 380px; margin: 1.6rem auto 0; text-align:left;
     background: rgba(255,255,255,0.03); border:1px solid var(--line); padding:1.6rem;
@@ -641,7 +655,10 @@
     </div>
 
     <div class="call-waiter reveal">
-      <button type="button" class="neon-btn" id="callWaiterBtn" style="margin-top:0;"><span>🔔 Appeler un serveur</span></button>
+      <button type="button" class="call-waiter-icon-btn" id="callWaiterBtn" aria-label="Appeler un serveur">
+        <img src="assets/call-waiter-icon.png" alt="">
+      </button>
+      <p class="call-waiter-label" id="callWaiterLabel">Appeler un serveur</p>
       <div class="call-waiter-form" id="callWaiterForm" style="display:none;">
         <div class="field">
           <label for="cwZone">Ta table / ta zone (optionnel)</label>
@@ -1111,6 +1128,7 @@
   const callWaiterCancel = document.getElementById('callWaiterCancel');
   const callWaiterSend = document.getElementById('callWaiterSend');
   const callWaiterMsg = document.getElementById('callWaiterMsg');
+  const callWaiterLabel = document.getElementById('callWaiterLabel');
   const cwZone = document.getElementById('cwZone');
 
   callWaiterBtn.addEventListener('click', () => {
@@ -1146,7 +1164,7 @@
     callWaiterMsg.style.color = '';
     callWaiterMsg.textContent = "Un serveur arrive !";
     cwZone.value = '';
-    callWaiterBtn.querySelector('span').textContent = 'Serveur en route ✓';
+    callWaiterLabel.textContent = 'Serveur en route ✓';
     callWaiterBtn.disabled = true;
 
     setTimeout(() => {
@@ -1155,7 +1173,7 @@
     }, 2000);
 
     setTimeout(() => {
-      callWaiterBtn.querySelector('span').textContent = '🔔 Appeler un serveur';
+      callWaiterLabel.textContent = 'Appeler un serveur';
       callWaiterBtn.disabled = false;
     }, 60000);
   });
