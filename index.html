@@ -61,7 +61,6 @@
       radial-gradient(circle at 15% 35%, rgba(255,133,179,0.22), transparent 40%),
       repeating-linear-gradient(0deg, rgba(255,45,120,0.09) 0px, rgba(255,45,120,0.09) 1px, transparent 1px, transparent 64px),
       repeating-linear-gradient(90deg, rgba(255,45,120,0.09) 0px, rgba(255,45,120,0.09) 1px, transparent 1px, transparent 64px);
-    animation: bgDrift 22s ease-in-out infinite;
   }
   @keyframes bgDrift{
     0%, 100%{ transform: translate(0,0) scale(1); }
@@ -74,12 +73,10 @@
   .neon-orb.a{
     width:420px; height:420px; top:-120px; left:-140px;
     background: var(--pink);
-    animation: orbFloatA 19s ease-in-out infinite;
   }
   .neon-orb.b{
     width:360px; height:360px; bottom:-100px; right:-120px;
     background: var(--pink-light);
-    animation: orbFloatB 25s ease-in-out infinite;
   }
   @keyframes orbFloatA{
     0%, 100%{ transform: translate(0,0); }
