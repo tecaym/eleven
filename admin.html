@@ -116,6 +116,8 @@
   .save-btn:hover{ color: var(--brass); }
   .del-btn{ color: rgba(237,227,211,0.4); }
   .del-btn:hover{ color: var(--danger); }
+  @keyframes tabAlertPulse{ 0%,100%{ color: var(--danger); } 50%{ color: var(--brass-light); } }
+  .tab-btn.alert{ animation: tabAlertPulse 1s infinite; }
   .status{ font-size:0.85rem; color: var(--brass-light); margin-bottom:1rem; min-height:1.2em; font-style:italic; font-family:'Cormorant Garamond',serif; }
   .empty{ opacity:0.5; padding:2rem 0; font-style:italic; font-family:'Cormorant Garamond',serif; }
 
@@ -225,6 +227,7 @@
         <button class="tab-btn" data-tab="boissons" style="background:none; border:none; color:rgba(237,227,211,0.5); font-family:'Jost',sans-serif; font-size:0.75rem; letter-spacing:0.2em; text-transform:uppercase; cursor:pointer; padding:0.4rem 0;">Boissons</button>
         <button class="tab-btn" data-tab="reservations" style="background:none; border:none; color:rgba(237,227,211,0.5); font-family:'Jost',sans-serif; font-size:0.75rem; letter-spacing:0.2em; text-transform:uppercase; cursor:pointer; padding:0.4rem 0;">Réservations <span id="resCount" style="color:var(--brass-light);"></span></button>
         <button class="tab-btn" data-tab="messages" style="background:none; border:none; color:rgba(237,227,211,0.5); font-family:'Jost',sans-serif; font-size:0.75rem; letter-spacing:0.2em; text-transform:uppercase; cursor:pointer; padding:0.4rem 0;">Messages <span id="msgCount" style="color:var(--brass-light);"></span></button>
+        <button class="tab-btn" data-tab="appels" style="background:none; border:none; color:rgba(237,227,211,0.5); font-family:'Jost',sans-serif; font-size:0.75rem; letter-spacing:0.2em; text-transform:uppercase; cursor:pointer; padding:0.4rem 0;">Appels <span id="callCount" style="color:var(--brass-light);"></span></button>
         <button class="tab-btn" data-tab="display" style="background:none; border:none; color:rgba(237,227,211,0.5); font-family:'Jost',sans-serif; font-size:0.75rem; letter-spacing:0.2em; text-transform:uppercase; cursor:pointer; padding:0.4rem 0;">Display TV</button>
       </div>
 
@@ -314,6 +317,21 @@
         <div class="empty" id="msgEmptyMsg" style="display:none;">Aucun message pour le moment.</div>
       </div>
 
+      <div id="tab-appels" style="display:none;">
+        <div class="eyebrow">Service</div>
+        <h1>Appels serveur</h1>
+
+        <div class="status" id="callStatusMsg"></div>
+
+        <div class="table-scroll"><table>
+          <thead>
+            <tr><th>Table / Zone</th><th>Heure</th><th>Statut</th><th></th></tr>
+          </thead>
+          <tbody id="calls-body"></tbody>
+        </table></div>
+        <div class="empty" id="callEmptyMsg" style="display:none;">Aucun appel pour le moment.</div>
+      </div>
+
       <div id="tab-display" style="display:none;">
         <div class="eyebrow">Télévisions</div>
         <h1>Display TV</h1>
@@ -364,6 +382,8 @@
       dashboard.style.display = 'block';
       loadSoirees();
       loadReservations();
+      loadCalls();
+      subscribeCalls();
     } else {
       loginScreen.style.display = 'flex';
       dashboard.style.display = 'none';
@@ -678,6 +698,7 @@
     btn.addEventListener('click', () => {
       document.querySelectorAll('.tab-btn').forEach(b => {
         b.classList.remove('active');
+        b.classList.remove('alert');
         b.style.color = 'rgba(237,227,211,0.5)';
       });
       btn.classList.add('active');
@@ -687,10 +708,12 @@
       document.getElementById('tab-boissons').style.display = tab === 'boissons' ? 'block' : 'none';
       document.getElementById('tab-reservations').style.display = tab === 'reservations' ? 'block' : 'none';
       document.getElementById('tab-messages').style.display = tab === 'messages' ? 'block' : 'none';
+      document.getElementById('tab-appels').style.display = tab === 'appels' ? 'block' : 'none';
       document.getElementById('tab-display').style.display = tab === 'display' ? 'block' : 'none';
       if(tab === 'boissons') loadMenuItems();
       if(tab === 'reservations') loadReservations();
       if(tab === 'messages') loadMessages();
+      if(tab === 'appels') loadCalls();
     });
   });
 
@@ -791,6 +814,102 @@
     showMsgStatus("Message supprimé.");
     loadMessages();
   });
+
+  // ---- Appels serveur ----
+  function showCallStatus(msg, isError){
+    const el = document.getElementById('callStatusMsg');
+    el.textContent = msg;
+    el.style.color = isError ? '#ff5c7a' : '';
+    if(msg) setTimeout(() => { el.textContent = ''; }, 3000);
+  }
+
+  async function loadCalls(){
+    const body = document.getElementById('calls-body');
+    const emptyMsg = document.getElementById('callEmptyMsg');
+    const countEl = document.getElementById('callCount');
+    const { data, error } = await supa.from('service_calls').select('*').order('created_at', { ascending: false });
+
+    if(error){ showCallStatus("Erreur de chargement : " + error.message, true); return; }
+
+    const enAttente = (data || []).filter(c => c.statut !== 'traite');
+    if(countEl) countEl.textContent = enAttente.length ? `(${enAttente.length})` : '';
+
+    if(!data || data.length === 0){
+      body.innerHTML = '';
+      emptyMsg.style.display = 'block';
+      return;
+    }
+    emptyMsg.style.display = 'none';
+
+    body.innerHTML = data.map(c => {
+      const heure = c.created_at ? new Date(c.created_at).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }) : '';
+      const traite = c.statut === 'traite';
+      return `
+        <tr data-id="${c.id}" style="${traite ? 'opacity:0.4;' : ''}">
+          <td>${c.zone ? escapeHtml(c.zone) : '—'}</td>
+          <td>${heure}</td>
+          <td style="${traite ? '' : 'color:var(--brass-light);'}">${traite ? 'Traité' : 'En attente'}</td>
+          <td class="row-actions">
+            ${traite ? '' : '<button class="done-btn">Traité</button>'}
+            <button class="del-btn">Supprimer</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  document.getElementById('calls-body').addEventListener('click', async (e) => {
+    const row = e.target.closest('tr');
+    if(!row) return;
+    const id = row.dataset.id;
+
+    if(e.target.classList.contains('done-btn')){
+      const { error } = await supa.from('service_calls').update({ statut: 'traite' }).eq('id', id);
+      if(error){ showCallStatus("Erreur : " + error.message, true); return; }
+      showCallStatus("Appel marqué comme traité.");
+      loadCalls();
+    }
+
+    if(e.target.classList.contains('del-btn')){
+      if(!confirm("Supprimer cet appel ?")) return;
+      const { error } = await supa.from('service_calls').delete().eq('id', id);
+      if(error){ showCallStatus("Erreur : " + error.message, true); return; }
+      showCallStatus("Appel supprimé.");
+      loadCalls();
+    }
+  });
+
+  // Petit bip sonore pour prévenir quand un nouvel appel arrive
+  function playCallAlert(){
+    try{
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type = 'sine';
+      o.frequency.value = 880;
+      g.gain.value = 0.18;
+      o.start();
+      setTimeout(() => { o.frequency.value = 660; }, 150);
+      setTimeout(() => { o.stop(); ctx.close(); }, 400);
+    }catch(err){ console.error('Alerte sonore impossible :', err); }
+  }
+
+  // Abonnement en temps réel : dès qu'un client appelle, l'admin est notifié instantanément (son + badge), sans recharger la page.
+  let callsChannel = null;
+  function subscribeCalls(){
+    if(callsChannel || !supa) return;
+    callsChannel = supa.channel('service_calls_changes')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'service_calls' }, () => {
+        playCallAlert();
+        loadCalls();
+        const tabBtn = document.querySelector('[data-tab="appels"]');
+        if(tabBtn && document.getElementById('tab-appels').style.display !== 'block'){
+          tabBtn.classList.add('alert');
+        }
+      })
+      .subscribe();
+  }
 
   checkSession();
 </script>

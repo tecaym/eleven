@@ -491,6 +491,19 @@
     min-height: 1.4em;
   }
 
+  .call-waiter{ text-align:center; margin-bottom: 3rem; }
+  .call-waiter-form{
+    max-width: 380px; margin: 1.6rem auto 0; text-align:left;
+    background: rgba(255,255,255,0.03); border:1px solid var(--line); padding:1.6rem;
+  }
+  .call-waiter-actions{ display:flex; align-items:center; gap:1.2rem; margin-top:0.6rem; }
+  .call-waiter-cancel{
+    background:none; border:none; color: rgba(246,242,244,0.5); font-family:'Jost',sans-serif;
+    font-size:0.75rem; letter-spacing:0.15em; text-transform:uppercase; cursor:pointer; padding:0.6rem 0;
+  }
+  .call-waiter-cancel:hover{ color: var(--pink-light); }
+  .call-waiter .confirm-msg{ margin-top:1rem; text-align:left; }
+
   footer{
     padding: 4.5rem clamp(1.5rem, 6vw, 6rem) 3rem;
     display:flex; flex-wrap:wrap; gap:2.5rem;
@@ -626,6 +639,22 @@
       <div class="eyebrow">La carte</div>
       <h2>Le <span>menu</span></h2>
     </div>
+
+    <div class="call-waiter reveal">
+      <button type="button" class="neon-btn" id="callWaiterBtn" style="margin-top:0;"><span>🔔 Appeler un serveur</span></button>
+      <div class="call-waiter-form" id="callWaiterForm" style="display:none;">
+        <div class="field">
+          <label for="cwZone">Ta table / ta zone (optionnel)</label>
+          <input type="text" id="cwZone" placeholder="Ex : Table 5, au bar...">
+        </div>
+        <div class="call-waiter-actions">
+          <button type="button" class="neon-btn" id="callWaiterSend" style="margin-top:0;"><span>Envoyer</span></button>
+          <button type="button" class="call-waiter-cancel" id="callWaiterCancel">Annuler</button>
+        </div>
+        <div class="confirm-msg" id="callWaiterMsg"></div>
+      </div>
+    </div>
+
     <div class="menu-grid reveal" id="menu-grid">
       <p style="opacity:0.5;">Chargement de la carte…</p>
     </div>
@@ -1074,6 +1103,61 @@
     } finally {
       submitBtn.disabled = false;
     }
+  });
+
+  // ---- Appeler un serveur ----
+  const callWaiterBtn = document.getElementById('callWaiterBtn');
+  const callWaiterForm = document.getElementById('callWaiterForm');
+  const callWaiterCancel = document.getElementById('callWaiterCancel');
+  const callWaiterSend = document.getElementById('callWaiterSend');
+  const callWaiterMsg = document.getElementById('callWaiterMsg');
+  const cwZone = document.getElementById('cwZone');
+
+  callWaiterBtn.addEventListener('click', () => {
+    const open = callWaiterForm.style.display === 'block';
+    callWaiterForm.style.display = open ? 'none' : 'block';
+    if(!open) cwZone.focus();
+  });
+
+  callWaiterCancel.addEventListener('click', () => {
+    callWaiterForm.style.display = 'none';
+    callWaiterMsg.textContent = '';
+    cwZone.value = '';
+  });
+
+  callWaiterSend.addEventListener('click', async () => {
+    if(!supa){
+      callWaiterMsg.style.color = '#ff5c7a';
+      callWaiterMsg.textContent = "Indisponible pour le moment.";
+      return;
+    }
+    const zone = cwZone.value.trim() || null;
+    callWaiterSend.disabled = true;
+    const { error } = await supa.from('service_calls').insert([{ zone }]);
+    callWaiterSend.disabled = false;
+
+    if(error){
+      callWaiterMsg.style.color = '#ff5c7a';
+      callWaiterMsg.textContent = "Une erreur est survenue, réessaie.";
+      console.error(error);
+      return;
+    }
+
+    callWaiterMsg.style.color = '';
+    callWaiterMsg.textContent = "Un serveur arrive !";
+    cwZone.value = '';
+    callWaiterBtn.querySelector('span').textContent = 'Serveur en route ✓';
+    callWaiterBtn.disabled = true;
+
+    setTimeout(() => {
+      callWaiterForm.style.display = 'none';
+      callWaiterMsg.textContent = '';
+    }, 2000);
+
+    setTimeout(() => {
+      callWaiterBtn.querySelector('span').textContent = '🔔 Appeler un serveur';
+      callWaiterBtn.disabled = false;
+    }, 60000);
   });
 
   document.getElementById('contactForm').addEventListener('submit', async function(e){
